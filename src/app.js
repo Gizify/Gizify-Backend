@@ -10,7 +10,7 @@ connectDB();
 app.use(express.json());
 
 // Routes
-const userRoutes = require("./routes/userRoutes");
-app.use("/api/users", userRoutes);
+const routes = require("./routes");
+app.use("/api", routes);
 
 module.exports = app;
