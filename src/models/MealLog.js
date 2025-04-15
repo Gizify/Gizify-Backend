@@ -1,8 +1,7 @@
 const MealSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ["breakfast", "lunch", "dinner", "snack"] },
     source: { type: String, enum: ["recipe", "barcode", "manual"] },
-    source_id: mongoose.Schema.Types.ObjectId, // can be Recipe or Barcode
+    source_id: mongoose.Schema.Types.ObjectId,
     nutrition_info: NutritionInfoSchema,
   },
   { _id: false }
