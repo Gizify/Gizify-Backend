@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
 
-// Import each route module
+const userRoutes = require("./userRoutes");
 const productRoutes = require("./product.routes");
 
-// Prefix & use them
+router.use("/user", userRoutes);
 router.use("/products", productRoutes);
 
 module.exports = router;
