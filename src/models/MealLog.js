@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const MealSchema = new mongoose.Schema(
   {
     source: { type: String, enum: ["recipe", "barcode", "manual"] },

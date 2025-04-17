@@ -1,21 +1,11 @@
+const mongoose = require("mongoose");
+const NutritionInfoSchema = require("./NutritionInfo");
+
 const IngredientSchema = new mongoose.Schema(
   {
     name: String,
     quantity: Number,
     unit: String,
-  },
-  { _id: false }
-);
-
-const NutritionInfoSchema = new mongoose.Schema(
-  {
-    calories: Number,
-    protein: Number,
-    carbs: Number,
-    fat: Number,
-    fiber: Number,
-    sugar: Number,
-    sodium: Number,
   },
   { _id: false }
 );

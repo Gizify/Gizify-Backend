@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const IngredientDBSchema = new mongoose.Schema({
   name: String,
   aliases: [String],
