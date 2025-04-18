@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const MealLogSchema = require("./MealLog");
 
 const NutritionStatsSchema = new mongoose.Schema(
   {
@@ -38,6 +39,7 @@ const UserSchema = new mongoose.Schema({
   activity_level: { type: String, enum: ["sedentary", "light", "moderate", "active", "very_active"] },
   goal: { type: String, enum: ["maintain", "gain"] },
   daily_nutrition_target: DailyTargetSchema,
+  meal_logs: [MealLogSchema],
   nutrition_stats: [NutritionStatsSchema],
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Recipe" }],
 });
