@@ -29,7 +29,6 @@ const scanProduct = async (req, res) => {
       const product = response.data.product;
 
       const packageSize = product.product_quantity || (product.quantity && parseFloat(product.quantity)) || null;
-
       const servingSize = product.serving_quantity ? parseFloat(product.serving_quantity) : null;
 
       const calculateNutrition = (nutrientPer100, nutrientValue, nutrientUnit) => {
@@ -70,16 +69,24 @@ const scanProduct = async (req, res) => {
         serving_size: servingSize,
       });
 
-      await newFoodCache.save();
+      try {
+        await newFoodCache.save();
+      } catch (err) {
+        if (err.code === 11000) {
+          cachedProduct = await FoodBarcode.findOne({ barcode });
+        } else {
+          throw err;
+        }
+      }
 
       res.json({
-        name: product.product_name,
-        brand: product.brands,
-        nutrition: nutrition_info,
-        ingredients: newFoodCache.ingredients_list,
-        packageSize: packageSize,
-        servingSize: servingSize,
-        cache: false,
+        name: cachedProduct?.product_name || product.product_name,
+        brand: cachedProduct?.brand || product.brands,
+        nutrition: cachedProduct?.nutrition_info || nutrition_info,
+        ingredients: cachedProduct?.ingredients_list || product.ingredients_text || [],
+        packageSize: cachedProduct?.package_size || packageSize,
+        servingSize: cachedProduct?.serving_size || servingSize,
+        cache: !!cachedProduct,
       });
     } else {
       res.status(404).json({ error: "Product not found in Open Food Facts database" });
