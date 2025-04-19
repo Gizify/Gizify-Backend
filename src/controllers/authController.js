@@ -47,37 +47,19 @@ function calculateDailyNutritionTarget({ gender, weight, height, birthdate, acti
 
 // Registrasi Pengguna
 const registerUser = async (req, res) => {
-  const { height, weight, gender, activity, goal, birthdate, photoOption, email, password } = req.body;
+  const { email, password } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: "Pengguna sudah terdaftar!" });
+      return res.status(400).json({ message: "Email sudah terdaftar!" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const nutritionTarget = calculateDailyNutritionTarget({
-      gender,
-      weight,
-      height,
-      birthdate,
-      activity_level: activity,
-      goal,
-    });
-
     const newUser = new User({
       email,
       passwordHash: hashedPassword,
-      birthdate,
-      gender,
-      height,
-      weight,
-      goal,
-      activity_level: activity,
-      daily_nutrition_target: nutritionTarget,
-      birthdate,
-      photoOption,
     });
 
     await newUser.save();
@@ -88,6 +70,43 @@ const registerUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Terjadi kesalahan pada server." });
+  }
+};
+
+// lengkapi data pengguna
+const completeUserProfile = async (req, res) => {
+  const { userId } = req;
+  const { height, weight, gender, activity, goal, birthdate, photoOption } = req.body;
+
+  try {
+    const nutritionTarget = calculateDailyNutritionTarget({
+      gender,
+      weight,
+      height,
+      birthdate,
+      activity_level: activity,
+      goal,
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        birthdate,
+        gender,
+        height,
+        weight,
+        goal,
+        activity_level: activity,
+        daily_nutrition_target: nutritionTarget,
+        photoOption,
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ message: "Profil berhasil dilengkapi!", user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Gagal melengkapi data profil." });
   }
 };
 
@@ -152,4 +171,4 @@ const updateUserData = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, updateUserData };
+module.exports = { registerUser, loginUser, updateUserData, completeUserProfile };
