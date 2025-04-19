@@ -33,7 +33,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   passwordHash: String,
   gender: { type: String, enum: ["male", "female"] },
-  age: Number,
+  birthdate: String,
   height: Number,
   weight: Number,
   activity_level: { type: String, enum: ["sedentary", "light", "moderate", "active", "very_active"] },

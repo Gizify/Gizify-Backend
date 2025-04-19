@@ -3,7 +3,8 @@ const FoodBarcode = require("../models/FoodBarcode");
 
 const addConsumptionFromBarcode = async (req, res) => {
   try {
-    const { userId, barcode, portion_size = 1 } = req.body;
+    const { userId } = req;
+    const { barcode, portion_size = 1 } = req.body;
 
     const foodItem = await FoodBarcode.findOne({ barcode });
     if (!foodItem) {
