@@ -127,9 +127,6 @@ const loginUser = async (req, res) => {
       token,
       user: userData,
     });
-
-    // Kirim token ke frontend
-    res.json({ message: "Login berhasil!", token });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Terjadi kesalahan pada server." });
