@@ -65,9 +65,14 @@ const registerUser = async (req, res) => {
 
     await newUser.save();
 
+    const user = {
+      name,
+      email,
+    };
+
     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-    res.status(201).json({ message: "Registrasi berhasil!", token });
+    res.status(201).json({ message: "Registrasi berhasil!", token, user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Terjadi kesalahan pada server." });
