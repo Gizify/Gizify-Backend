@@ -47,7 +47,7 @@ function calculateDailyNutritionTarget({ gender, weight, height, birthdate, acti
 
 // Registrasi Pengguna
 const registerUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -58,6 +58,7 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
+      name,
       email,
       passwordHash: hashedPassword,
     });
@@ -128,6 +129,7 @@ const loginUser = async (req, res) => {
 
     const userData = {
       _id: user._id,
+      name: user.name,
       email: user.email,
       height: user.height,
       weight: user.weight,
