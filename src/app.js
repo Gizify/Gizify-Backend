@@ -3,6 +3,15 @@ const connectDB = require("./config/db");
 
 const app = express();
 
+// CORS middleware
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 // Connect to DB
 connectDB();
 
