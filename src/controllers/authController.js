@@ -144,6 +144,7 @@ const loginUser = async (req, res) => {
       birthdate: user.birthdate,
       photoOption: user.photoOption,
       daily_nutrition_target: user.daily_nutrition_target,
+      today_stats: user.today_stats,
     };
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
