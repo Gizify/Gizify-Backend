@@ -9,18 +9,16 @@ function calculateDailyNutritionTarget({ gender, weight, height, birthdate, acti
   const age = new Date().getFullYear() - new Date(birthdate).getFullYear();
 
   let bmr;
-  if (gender === "male") {
+  if (gender === "Laki-Laki") {
     bmr = 10 * weight + 6.25 * height - 5 * age + 5;
   } else {
     bmr = 10 * weight + 6.25 * height - 5 * age - 161;
   }
 
   const activityFactorMap = {
-    sedentary: 1.2,
-    light: 1.375,
-    moderate: 1.55,
-    active: 1.725,
-    very_active: 1.9,
+    ringan: 1.375,
+    sedang: 1.55,
+    berat: 1.725,
   };
 
   const activityFactor = activityFactorMap[activity_level] || 1.2;
@@ -144,7 +142,8 @@ const loginUser = async (req, res) => {
       birthdate: user.birthdate,
       photoOption: user.photoOption,
       daily_nutrition_target: user.daily_nutrition_target,
-      today_stats: user.today_stats,
+      nutrition_stats: user.nutrition_stats,
+      meal_logs: user.meal_logs,
     };
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
