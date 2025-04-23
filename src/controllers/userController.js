@@ -27,66 +27,58 @@ const addConsumptionFromBarcode = async (req, res) => {
       sodium: foodItem.nutrition_info.sodium * portion_size,
     };
 
-    let todayStats = user.nutrition_stats.find((entry) => entry.date.toDateString() === today.toDateString());
+    const statsIndex = user.nutrition_stats.findIndex((entry) => new Date(entry.date).toDateString() === today.toDateString());
 
-    if (!todayStats) {
-      todayStats = {
+    if (statsIndex === -1) {
+      user.nutrition_stats.push({
         date: today,
-        total_calories: 0,
-        total_protein: 0,
-        total_carbs: 0,
-        total_fat: 0,
-        total_fiber: 0,
-        total_sugar: 0,
-        total_sodium: 0,
-      };
-      user.nutrition_stats.push(todayStats);
+        total_calories: adjustedNutrition.calories,
+        total_protein: adjustedNutrition.protein,
+        total_carbs: adjustedNutrition.carbs,
+        total_fat: adjustedNutrition.fat,
+        total_fiber: adjustedNutrition.fiber,
+        total_sugar: adjustedNutrition.sugar,
+        total_sodium: adjustedNutrition.sodium,
+      });
+    } else {
+      user.nutrition_stats[statsIndex].total_calories += adjustedNutrition.calories;
+      user.nutrition_stats[statsIndex].total_protein += adjustedNutrition.protein;
+      user.nutrition_stats[statsIndex].total_carbs += adjustedNutrition.carbs;
+      user.nutrition_stats[statsIndex].total_fat += adjustedNutrition.fat;
+      user.nutrition_stats[statsIndex].total_fiber += adjustedNutrition.fiber;
+      user.nutrition_stats[statsIndex].total_sugar += adjustedNutrition.sugar;
+      user.nutrition_stats[statsIndex].total_sodium += adjustedNutrition.sodium;
     }
 
-    todayStats.total_calories += adjustedNutrition.calories;
-    todayStats.total_protein += adjustedNutrition.protein;
-    todayStats.total_carbs += adjustedNutrition.carbs;
-    todayStats.total_fat += adjustedNutrition.fat;
-    todayStats.total_fiber += adjustedNutrition.fiber;
-    todayStats.total_sugar += adjustedNutrition.sugar;
-    todayStats.total_sodium += adjustedNutrition.sodium;
-
-    // Update meal log
-    let todayMealLog = user.meal_logs.find((log) => log.date.toDateString() === today.toDateString());
+    let todayMealLog = user.meal_logs.find((log) => new Date(log.date).toDateString() === today.toDateString());
 
     const mealEntry = {
       source: "barcode",
       source_id: foodItem._id,
       name: foodItem.product_name,
       portion_size: portion_size,
-      nutrition_info: {
-        calories: adjustedNutrition.calories,
-        protein: adjustedNutrition.protein,
-        carbs: adjustedNutrition.carbs,
-        fat: adjustedNutrition.fat,
-        fiber: adjustedNutrition.fiber,
-        sugar: adjustedNutrition.sugar,
-        sodium: adjustedNutrition.sodium,
-      },
+      nutrition_info: adjustedNutrition,
       consumed_at: new Date(),
     };
 
     if (!todayMealLog) {
-      todayMealLog = {
+      user.meal_logs.push({
         date: today,
         meals: [mealEntry],
-      };
-      user.meal_logs.push(todayMealLog);
+      });
     } else {
       todayMealLog.meals.push(mealEntry);
     }
 
     await user.save();
 
+    const finalStats = user.nutrition_stats.find((entry) => new Date(entry.date).toDateString() === today.toDateString());
+    const finalMeals = user.meal_logs.find((entry) => new Date(entry.date).toDateString() === today.toDateString());
+
     res.json({
       message: "Konsumsi berhasil ditambahkan",
-      today_stats: todayStats,
-      today_meals: todayMealLog.meals,
+      today_stats: finalStats,
+      today_meals: finalMeals?.meals || [],
     });
   } catch (err) {
     console.error("Error menambahkan konsumsi:", err);
