@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const NutritionInfoSchema = require("./nutritionInfo");
+const NutritionInfoSchema = require("./NutritionInfoSchema");
 
 const FoodBarcodeSchema = new mongoose.Schema({
   barcode: { type: String, unique: true },
