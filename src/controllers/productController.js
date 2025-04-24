@@ -19,6 +19,7 @@ const scanProduct = async (req, res) => {
         ingredients: cachedProduct.ingredients_list,
         packageSize: cachedProduct.package_size,
         servingSize: cachedProduct.serving_size,
+        image: cachedProduct.image_url,
         cache: true,
       });
     }
@@ -67,6 +68,7 @@ const scanProduct = async (req, res) => {
         ingredients_list: product.ingredients_text || [],
         package_size: packageSize,
         serving_size: servingSize,
+        image: product.image_url,
       });
 
       try {
@@ -86,6 +88,7 @@ const scanProduct = async (req, res) => {
         ingredients: cachedProduct?.ingredients_list || product.ingredients_text || [],
         packageSize: cachedProduct?.package_size || packageSize,
         servingSize: cachedProduct?.serving_size || servingSize,
+        image: cachedProduct?.image_url || product.image_url,
         cache: !!cachedProduct,
       });
     } else {

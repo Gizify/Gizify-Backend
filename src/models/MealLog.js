@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const NutritionInfoSchema = require("./NutritionInfo");
+const NutritionInfoSchema = require("./nutritionInfo");
 
 const MealSchema = new mongoose.Schema(
   {
