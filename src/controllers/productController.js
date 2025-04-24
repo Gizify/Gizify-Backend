@@ -90,7 +90,7 @@ const scanProduct = async (req, res) => {
         packageSize: cachedProduct?.package_size || packageSize,
         servingSize: cachedProduct?.serving_size || servingSize,
         image: cachedProduct?.image_url || product.image_url,
-        barcode: cachedProduct?.barcode || product.barcode,
+        barcode: cachedProduct?.barcode || product.code,
         cache: !!cachedProduct,
       });
     } else {
