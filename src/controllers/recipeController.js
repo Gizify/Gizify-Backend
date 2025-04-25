@@ -1,6 +1,8 @@
 require("dotenv").config();
 const axios = require("axios");
+const Recipe = require("../models/Recipe");
 
+// Generate resep dengan AI
 const generateRecipe = async (req, res) => {
   const { ingredients, difficulty, cuisine } = req.body;
 
@@ -60,4 +62,18 @@ Tolong balas dalam format JSON seperti berikut:
   }
 };
 
-module.exports = { generateRecipe };
+// Ambil semua resep dari MongoDB
+const getAllRecipes = async (req, res) => {
+  try {
+    const recipes = await Recipe.find();
+    res.json(recipes);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Failed to fetch recipes" });
+  }
+};
+
+module.exports = {
+  generateRecipe,
+  getAllRecipes,
+};
