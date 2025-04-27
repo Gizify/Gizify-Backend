@@ -68,9 +68,14 @@ const registerUser = async (req, res) => {
       email,
     };
 
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    // Atur token expire 7 hari
+    const expiresInSeconds = 7 * 24 * 60 * 60;
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
 
-    res.status(201).json({ message: "Registrasi berhasil!", token, user });
+    // Hitung expiredAt dalam milisecond
+    const expiredAt = Date.now() + expiresInSeconds * 1000;
+
+    res.status(201).json({ message: "Registrasi berhasil!", token, user, expiredAt });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Terjadi kesalahan pada server." });
@@ -146,11 +151,17 @@ const loginUser = async (req, res) => {
       meal_logs: user.meal_logs,
     };
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    // Atur token expire 7 hari
+    const expiresInSeconds = 7 * 24 * 60 * 60;
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
+
+    // Hitung expiredAt dalam milisecond
+    const expiredAt = Date.now() + expiresInSeconds * 1000;
 
     res.json({
       message: "Login berhasil!",
       token,
+      expiredAt,
       user: userData,
     });
   } catch (error) {
