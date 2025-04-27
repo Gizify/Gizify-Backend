@@ -139,7 +139,7 @@ const addConsumption = async (req, res) => {
         return res.status(404).json({ message: "Resep tidak ditemukan." });
       }
 
-      foodName = recipe.name;
+      foodName = recipe.title;
       adjustedNutrition = calculateAdjustedNutrition(recipe.nutrition_info, portion_size);
     }
 
