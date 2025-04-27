@@ -2,6 +2,7 @@ const User = require("../models/User");
 const FoodBarcode = require("../models/FoodBarcode");
 const { DateTime } = require("luxon");
 const Recipe = require("../models/Recipe");
+const axios = require("axios");
 
 const addConsumption = async (req, res) => {
   try {
@@ -141,19 +142,51 @@ function calculateAdjustedNutrition(nutritionInfo, portion_size) {
 
 // Generate resep dengan AI
 const generateRecipe = async (req, res) => {
-  const { ingredients, difficulty, cuisine } = req.body;
+  const { ingredients, difficulty, cuisine, daily_nutrition_target, nutrition_stats } = req.body;
 
-  if (!ingredients || !difficulty || !cuisine) {
+  if (!ingredients || !difficulty || !cuisine || !daily_nutrition_target || !nutrition_stats) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
+    // Menghitung kekurangan nutrisi
+    const deficits = getNutrientDeficits(daily_nutrition_target, nutrition_stats);
+
+    // Membuat prompt dengan kekurangan nutrisi
     const prompt = `
 Saya ingin membuat resep makanan dari bahan berikut: ${ingredients.join(", ")}.
 Tingkat kesulitan: ${difficulty}.
 Jenis masakan: ${cuisine}.
+Berikut adalah target nutrisi saya hari ini:
+- Kalori: ${daily_nutrition_target.calories}
+- Protein: ${daily_nutrition_target.protein}
+- Karbohidrat: ${daily_nutrition_target.carbs}
+- Lemak: ${daily_nutrition_target.fat}
+- Serat: ${daily_nutrition_target.fiber}
+- Gula: ${daily_nutrition_target.sugar}
+- Natrium: ${daily_nutrition_target.sodium}
 
-Tolong balas dalam format JSON seperti berikut:
+Namun, saya telah mengonsumsi makanan berikut pada hari ini:
+- Kalori: ${nutrition_stats.total_calories}
+- Protein: ${nutrition_stats.total_protein}
+- Karbohidrat: ${nutrition_stats.total_carbs}
+- Lemak: ${nutrition_stats.total_fat}
+- Serat: ${nutrition_stats.total_fiber}
+- Gula: ${nutrition_stats.total_sugar}
+- Natrium: ${nutrition_stats.total_sodium}
+
+Dengan kekurangan berikut:
+- Kalori kurang: ${deficits.calories} kcal
+- Protein kurang: ${deficits.protein} g
+- Karbohidrat kurang: ${deficits.carbs} g
+- Lemak kurang: ${deficits.fat} g
+- Serat kurang: ${deficits.fiber} g
+- Gula kurang: ${deficits.sugar} g
+- Natrium kurang: ${deficits.sodium} mg
+
+Tolong bantu saya membuat resep yang tidak hanya menggunakan bahan tersebut, tetapi juga membantu saya memenuhi kekurangan nutrisi ini.
+
+Balas dalam format JSON berikut:
 
 {
   "bahan": ["..."],
@@ -198,4 +231,19 @@ Tolong balas dalam format JSON seperti berikut:
     res.status(500).json({ error: "Failed to generate recipe" });
   }
 };
+
+const getNutrientDeficits = (dailyTarget, nutritionStats) => {
+  const deficits = {
+    calories: dailyTarget.calories - nutritionStats.total_calories,
+    protein: dailyTarget.protein - nutritionStats.total_protein,
+    carbs: dailyTarget.carbs - nutritionStats.total_carbs,
+    fat: dailyTarget.fat - nutritionStats.total_fat,
+    fiber: dailyTarget.fiber - nutritionStats.total_fiber,
+    sugar: dailyTarget.sugar - nutritionStats.total_sugar,
+    sodium: dailyTarget.sodium - nutritionStats.total_sodium,
+  };
+
+  return deficits;
+};
+
 module.exports = { addConsumption, generateRecipe };

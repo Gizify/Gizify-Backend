@@ -1,5 +1,4 @@
 require("dotenv").config();
-const axios = require("axios");
 const Recipe = require("../models/Recipe");
 
 // Ambil semua resep dari MongoDB
