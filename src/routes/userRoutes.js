@@ -5,5 +5,6 @@ const router = express.Router();
 
 router.post("/consumption", userController.addConsumption);
 router.post("/generate", userController.generateRecipe);
+router.delete("/delete", userController.deleteAccount);
 
 module.exports = router;

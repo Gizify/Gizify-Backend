@@ -254,4 +254,25 @@ const generateRecipe = async (req, res) => {
   }
 };
 
-module.exports = { addConsumption, generateRecipe };
+const deleteAccount = async (req, res) => {
+  const userId = req.userId;
+
+  try {
+    console.log(userId);
+    // Cari pengguna berdasarkan ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Pengguna tidak ditemukan" });
+    }
+
+    // Hapus akun pengguna
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).json({ message: "Akun berhasil dihapus" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Terjadi kesalahan pada server", error: error.message });
+  }
+};
+
+module.exports = { addConsumption, generateRecipe, deleteAccount };

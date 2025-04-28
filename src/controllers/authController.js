@@ -70,7 +70,7 @@ const registerUser = async (req, res) => {
 
     // Atur token expire 7 hari
     const expiresInSeconds = 7 * 24 * 60 * 60;
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
 
     // Hitung expiredAt dalam milisecond
     const expiredAt = Date.now() + expiresInSeconds * 1000;
