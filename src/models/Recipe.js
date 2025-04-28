@@ -13,6 +13,7 @@ const IngredientSchema = new mongoose.Schema(
 const RecipeSchema = new mongoose.Schema({
   title: String,
   ingredients: [IngredientSchema],
+  Ai: { type: Boolean, default: false },
   steps: [String],
   nutrition_info: NutritionInfoSchema,
   created_at: { type: Date, default: Date.now },

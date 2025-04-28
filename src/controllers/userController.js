@@ -3,6 +3,7 @@ const FoodBarcode = require("../models/FoodBarcode");
 const { DateTime } = require("luxon");
 const Recipe = require("../models/Recipe");
 const axios = require("axios");
+const mongoose = require("mongoose");
 
 const addConsumption = async (req, res) => {
   try {
@@ -149,58 +150,52 @@ const generateRecipe = async (req, res) => {
   }
 
   try {
-    // Menghitung kekurangan nutrisi
-    const deficits = getNutrientDeficits(daily_nutrition_target, nutrition_stats);
-
     // Membuat prompt dengan kekurangan nutrisi
-    const prompt = `
-Saya ingin membuat resep makanan dari bahan berikut: ${ingredients.join(", ")}.
-Tingkat kesulitan: ${difficulty}.
-Jenis masakan: ${cuisine}.
-Berikut adalah target nutrisi saya hari ini:
-- Kalori: ${daily_nutrition_target.calories}
-- Protein: ${daily_nutrition_target.protein}
-- Karbohidrat: ${daily_nutrition_target.carbs}
-- Lemak: ${daily_nutrition_target.fat}
-- Serat: ${daily_nutrition_target.fiber}
-- Gula: ${daily_nutrition_target.sugar}
-- Natrium: ${daily_nutrition_target.sodium}
-
-Namun, saya telah mengonsumsi makanan berikut pada hari ini:
-- Kalori: ${nutrition_stats.total_calories}
-- Protein: ${nutrition_stats.total_protein}
-- Karbohidrat: ${nutrition_stats.total_carbs}
-- Lemak: ${nutrition_stats.total_fat}
-- Serat: ${nutrition_stats.total_fiber}
-- Gula: ${nutrition_stats.total_sugar}
-- Natrium: ${nutrition_stats.total_sodium}
-
-Dengan kekurangan berikut:
-- Kalori kurang: ${deficits.calories} kcal
-- Protein kurang: ${deficits.protein} g
-- Karbohidrat kurang: ${deficits.carbs} g
-- Lemak kurang: ${deficits.fat} g
-- Serat kurang: ${deficits.fiber} g
-- Gula kurang: ${deficits.sugar} g
-- Natrium kurang: ${deficits.sodium} mg
-
-Tolong bantu saya membuat resep yang tidak hanya menggunakan bahan tersebut, tetapi juga membantu saya memenuhi kekurangan nutrisi ini.
-
-Balas dalam format JSON berikut:
-
-{
-  "bahan": ["..."],
-  "langkah": ["..."],
-  "gizi": {
-    "kalori": "...",
-    "protein": "...",
-    "lemak": "...",
-    "gula": "...",
-    "garam": "...",
-    "serat": "..."
-  }
-}
-`;
+    const prompt = `Saya ingin membuat resep makanan dari bahan berikut: ${ingredients.join(", ")}.
+        Tingkat kesulitan: ${difficulty}.
+        Jenis masakan: ${cuisine}.
+        Berikut adalah target nutrisi saya hari ini:
+        - Kalori: ${daily_nutrition_target.calories}
+        - Protein: ${daily_nutrition_target.protein}
+        - Karbohidrat: ${daily_nutrition_target.carbs}
+        - Lemak: ${daily_nutrition_target.fat}
+        - Serat: ${daily_nutrition_target.fiber}
+        - Gula: ${daily_nutrition_target.sugar}
+        - Natrium: ${daily_nutrition_target.sodium}
+        
+        Namun, saya telah mengonsumsi makanan berikut pada hari ini:
+        - Kalori: ${nutrition_stats.total_calories}
+        - Protein: ${nutrition_stats.total_protein}
+        - Karbohidrat: ${nutrition_stats.total_carbs}
+        - Lemak: ${nutrition_stats.total_fat}
+        - Serat: ${nutrition_stats.total_fiber}
+        - Gula: ${nutrition_stats.total_sugar}
+        - Natrium: ${nutrition_stats.total_sodium}
+        
+        Tolong bantu saya membuat resep yang tidak hanya menggunakan bahan tersebut, tetapi juga membantu saya memenuhi kekurangan nutrisi ini.
+        
+        Balas dalam format JSON berikut:
+        
+        {
+          "title": "...",
+          "bahan": [
+            {
+              "name": "...",
+              "quantity": ...,
+              "unit": "..."
+            }
+          ],
+          "langkah": ["..."],
+          "gizi": {
+            "calories": ...,
+            "carbs": ...,
+            "protein": ...,
+            "fat": ...,
+            "sugar": ...,
+            "sodium": ...,
+            "fiber": ...
+          }
+        }`;
 
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
@@ -225,25 +220,38 @@ Balas dalam format JSON berikut:
 
     const parsedResult = JSON.parse(jsonString);
 
-    res.json({ result: parsedResult });
+    // Format data untuk disimpan ke database
+    const recipeData = {
+      title: parsedResult.title || "Resep AI",
+      ingredients: parsedResult.bahan,
+      steps: parsedResult.langkah,
+      nutrition_info: {
+        calories: parsedResult.gizi.calories,
+        carbs: parsedResult.gizi.carbs,
+        protein: parsedResult.gizi.protein,
+        fat: parsedResult.gizi.fat,
+        sugar: parsedResult.gizi.sugar,
+        sodium: parsedResult.gizi.sodium,
+        fiber: parsedResult.gizi.fiber,
+      },
+      Ai: true,
+      tags: [cuisine, difficulty],
+    };
+
+    // Simpan ke database
+    const Recipe = mongoose.model("Recipe");
+    const newRecipe = new Recipe(recipeData);
+    const savedRecipe = await newRecipe.save();
+
+    res.json({
+      result: parsedResult,
+      recipeId: savedRecipe._id,
+      message: "Recipe generated and saved successfully",
+    });
   } catch (error) {
     console.error(error.response?.data || error.message);
     res.status(500).json({ error: "Failed to generate recipe" });
   }
-};
-
-const getNutrientDeficits = (dailyTarget, nutritionStats) => {
-  const deficits = {
-    calories: dailyTarget.calories - nutritionStats.total_calories,
-    protein: dailyTarget.protein - nutritionStats.total_protein,
-    carbs: dailyTarget.carbs - nutritionStats.total_carbs,
-    fat: dailyTarget.fat - nutritionStats.total_fat,
-    fiber: dailyTarget.fiber - nutritionStats.total_fiber,
-    sugar: dailyTarget.sugar - nutritionStats.total_sugar,
-    sodium: dailyTarget.sodium - nutritionStats.total_sodium,
-  };
-
-  return deficits;
 };
 
 module.exports = { addConsumption, generateRecipe };
