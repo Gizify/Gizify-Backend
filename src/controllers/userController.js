@@ -145,7 +145,7 @@ function calculateAdjustedNutrition(nutritionInfo, portion_size) {
 const generateRecipe = async (req, res) => {
   const { ingredients, difficulty, cuisine, daily_nutrition_target, nutrition_stats } = req.body;
 
-  if (!ingredients || !difficulty || !cuisine || !daily_nutrition_target || !nutrition_stats) {
+  if (!ingredients || !difficulty || !cuisine || !daily_nutrition_target) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
