@@ -143,7 +143,7 @@ function calculateAdjustedNutrition(nutritionInfo, portion_size) {
 
 // Generate resep dengan AI
 const generateRecipe = async (req, res) => {
-  const { ingredients, difficulty, cuisine, daily_nutrition_target, nutrition_stats } = req.body;
+  const { ingredients, difficulty, cuisine, daily_nutrition_target, nutrition_stats = {} } = req.body;
 
   if (!ingredients || !difficulty || !cuisine || !daily_nutrition_target) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -164,13 +164,13 @@ const generateRecipe = async (req, res) => {
         - Natrium: ${daily_nutrition_target.sodium}
         
         Namun, saya telah mengonsumsi makanan berikut pada hari ini:
-        - Kalori: ${nutrition_stats.total_calories}
-        - Protein: ${nutrition_stats.total_protein}
-        - Karbohidrat: ${nutrition_stats.total_carbs}
-        - Lemak: ${nutrition_stats.total_fat}
-        - Serat: ${nutrition_stats.total_fiber}
-        - Gula: ${nutrition_stats.total_sugar}
-        - Natrium: ${nutrition_stats.total_sodium}
+        - Kalori: ${nutrition_stats?.total_calories || 0}
+        - Protein: ${nutrition_stats?.total_protein || 0}
+        - Karbohidrat: ${nutrition_stats?.total_carbs || 0}
+        - Lemak: ${nutrition_stats?.total_fat || 0}
+        - Serat: ${nutrition_stats?.total_fiber || 0}
+        - Gula: ${nutrition_stats?.total_sugar || 0}
+        - Natrium: ${nutrition_stats?.total_sodium || 0}
         
         Tolong bantu saya membuat resep yang tidak hanya menggunakan bahan tersebut, tetapi juga membantu saya memenuhi kekurangan nutrisi ini.
         
