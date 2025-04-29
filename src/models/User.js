@@ -37,7 +37,7 @@ const UserSchema = new mongoose.Schema({
   height: Number,
   weight: Number,
   activity_level: { type: String, enum: ["Ringan", "Sedang", "Berat"] },
-  goal: { type: String, enum: ["maintain", "gain"] },
+  goal: String,
   daily_nutrition_target: DailyTargetSchema,
   meal_logs: [MealLogSchema],
   nutrition_stats: [NutritionStatsSchema],
