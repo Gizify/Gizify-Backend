@@ -2,46 +2,9 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const dotenv = require("dotenv");
+const { calculateDailyNutritionTarget } = require("../helper/authHelper");
 
 dotenv.config();
-
-function calculateDailyNutritionTarget({ gender, weight, height, birthdate, activity_level, goal }) {
-  const age = new Date().getFullYear() - new Date(birthdate).getFullYear();
-
-  let bmr;
-  if (gender === "Laki-Laki") {
-    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-  } else {
-    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-  }
-
-  const activityFactorMap = {
-    ringan: 1.375,
-    sedang: 1.55,
-    berat: 1.725,
-  };
-
-  const activityFactor = activityFactorMap[activity_level] || 1.2;
-  let calories = bmr * activityFactor;
-
-  if (goal === "gain") {
-    calories += 300;
-  }
-
-  const protein = (calories * 0.2) / 4;
-  const fat = (calories * 0.25) / 9;
-  const carbs = (calories * 0.55) / 4;
-
-  return {
-    calories: Math.round(calories),
-    protein: Math.round(protein),
-    fat: Math.round(fat),
-    carbs: Math.round(carbs),
-    fiber: 30,
-    sugar: 36,
-    sodium: 2300,
-  };
-}
 
 // Registrasi Pengguna
 const registerUser = async (req, res) => {
@@ -82,30 +45,28 @@ const registerUser = async (req, res) => {
   }
 };
 
-// lengkapi data pengguna
+// lengkapi data pengguna untuk ibu hamil
 const completeUserProfile = async (req, res) => {
   const { userId } = req;
-  const { height, weight, gender, activity, goal, birthdate, photoOption } = req.body;
+  const { height, weight, activity, birthdate, gestational_age, photoOption } = req.body;
 
   try {
     const nutritionTarget = calculateDailyNutritionTarget({
-      gender,
       weight,
       height,
       birthdate,
       activity_level: activity,
-      goal,
+      gestational_age,
     });
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
         birthdate,
-        gender,
         height,
         weight,
-        goal,
         activity_level: activity,
+        gestational_age,
         daily_nutrition_target: nutritionTarget,
         photoOption,
       },
@@ -119,7 +80,7 @@ const completeUserProfile = async (req, res) => {
   }
 };
 
-// Login Pengguna
+// Login Pengguna (Ibu Hamil)
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -139,29 +100,23 @@ const loginUser = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      birthdate: user.birthdate,
       height: user.height,
       weight: user.weight,
-      gender: user.gender,
-      goal: user.goal,
       activity_level: user.activity_level,
-      birthdate: user.birthdate,
+      gestational_age: user.gestational_age,
       photoOption: user.photoOption,
       daily_nutrition_target: user.daily_nutrition_target,
       nutrition_stats: user.nutrition_stats,
       meal_logs: user.meal_logs,
     };
 
-    // Atur token expire 7 hari
     const expiresInSeconds = 7 * 24 * 60 * 60;
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
-
-    // Hitung expiredAt dalam milisecond
-    const expiredAt = Date.now() + expiresInSeconds * 1000;
 
     res.json({
       message: "Login berhasil!",
       token,
-      expiredAt,
       user: userData,
     });
   } catch (error) {

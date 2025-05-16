@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
   passwordHash: String,
-  age: Number,
+  birthDate: String,
   gestational_age: Number,
   height: Number,
   weight: Number,
@@ -15,6 +15,7 @@ const UserSchema = new mongoose.Schema({
   meal_logs: [MealLogSchema],
   nutrition_stats: [NutritionInfoSchema],
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Recipe" }],
+  photoOption: String,
 });
 
 module.exports = mongoose.model("User", UserSchema);
