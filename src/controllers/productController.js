@@ -1,5 +1,5 @@
 const axios = require("axios");
-const FoodBarcode = require("../models/FoodBarcode"); // Model untuk cache makanan
+const FoodBarcode = require("../models/FoodBarcode");
 
 const scanProduct = async (req, res) => {
   const { barcode } = req.params;
@@ -29,27 +29,23 @@ const scanProduct = async (req, res) => {
 
     if (response.data.status === 1) {
       const product = response.data.product;
+      const nutriments = product.nutriments || {};
 
       const packageSize = product.product_quantity || (product.quantity && parseFloat(product.quantity)) || null;
       const servingSize = product.serving_quantity ? parseFloat(product.serving_quantity) : null;
 
-      const calculateNutrition = (nutrientPer100, nutrientValue, nutrientUnit) => {
-        if (nutrientValue && packageSize) {
-          if (nutrientUnit === "serving" && servingSize) {
-            return (nutrientValue / servingSize) * packageSize;
+      const calculateNutrition = (per100g, value, unit) => {
+        if (value && packageSize) {
+          if (unit === "serving" && servingSize) {
+            return (value / servingSize) * packageSize;
           }
-
-          if (nutrientPer100) {
-            return (nutrientValue / 100) * packageSize;
+          if (per100g) {
+            return (value / 100) * packageSize;
           }
-
-          return nutrientValue;
+          return value;
         }
-
-        return nutrientValue;
+        return value || 0;
       };
-
-      const nutriments = product.nutriments || {};
 
       const nutrition_info = {
         calories: calculateNutrition(nutriments["energy-kcal_100g"], nutriments["energy-kcal"], nutriments["energy-kcal_unit"]),
@@ -59,13 +55,23 @@ const scanProduct = async (req, res) => {
         sugar: calculateNutrition(nutriments.sugars_100g, nutriments.sugars, nutriments.sugars_unit),
         sodium: calculateNutrition(nutriments.sodium_100g, nutriments.sodium, nutriments.sodium_unit),
         fiber: calculateNutrition(nutriments.fiber_100g, nutriments.fiber, nutriments.fiber_unit),
+        folic_acid: calculateNutrition(nutriments["folic-acid_100g"], nutriments["folic-acid"], nutriments["folic-acid_unit"]),
+        kalsium: calculateNutrition(nutriments["calcium_100g"], nutriments["calcium"], nutriments["calcium_unit"]),
+        vitamin_d: calculateNutrition(nutriments["vitamin-d_100g"], nutriments["vitamin-d"], nutriments["vitamin-d_unit"]),
+        vitamin_b16: calculateNutrition(nutriments["vitamin-b6_100g"], nutriments["vitamin-b6"], nutriments["vitamin-b6_unit"]),
+        vitamin_b12: calculateNutrition(nutriments["vitamin-b12_100g"], nutriments["vitamin-b12"], nutriments["vitamin-b12_unit"]),
+        vitamin_c: calculateNutrition(nutriments["vitamin-c_100g"], nutriments["vitamin-c"], nutriments["vitamin-c_unit"]),
+        zinc: calculateNutrition(nutriments["zinc_100g"], nutriments["zinc"], nutriments["zinc_unit"]),
+        iodium: calculateNutrition(nutriments["iodine_100g"], nutriments["iodine"], nutriments["iodine_unit"]),
+        water: calculateNutrition(nutriments["water_100g"], nutriments["water"], nutriments["water_unit"]),
+        iron: calculateNutrition(nutriments["iron_100g"], nutriments["iron"], nutriments["iron_unit"]),
       };
 
       const newFoodCache = new FoodBarcode({
         barcode: product.code,
         product_name: product.product_name,
         brand: product.brands,
-        nutrition_info: nutrition_info,
+        nutrition_info,
         ingredients_list: product.ingredients_text || [],
         package_size: packageSize,
         serving_size: servingSize,
