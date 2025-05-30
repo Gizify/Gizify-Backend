@@ -12,13 +12,13 @@ const NutritionInfoSchema = new mongoose.Schema(
     folic_acid: Number,
     kalsium: Number,
     vitamin_d: Number,
-    vitamin_b16: Number,
     vitamin_b12: Number,
     vitamin_c: Number,
     zinc: Number,
     iodium: Number,
     water: Number,
     iron: Number,
+    date: String,
   },
   { _id: false }
 );

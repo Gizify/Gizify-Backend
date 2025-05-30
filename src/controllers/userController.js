@@ -47,28 +47,45 @@ const addConsumption = async (req, res) => {
     // Update nutrition stats
     const statsIndex = user.nutrition_stats.findIndex((entry) => {
       const entryDate = DateTime.fromJSDate(new Date(entry.date)).setZone(userTimeZone).startOf("day");
-      return entryDate.equals(userToday);
+      return entryDate.toISODate() === userToday.toISODate();
     });
+
+    console.log(todayStart);
 
     if (statsIndex === -1) {
       user.nutrition_stats.push({
         date: todayStart,
-        total_calories: adjustedNutrition.calories,
-        total_protein: adjustedNutrition.protein,
-        total_carbs: adjustedNutrition.carbs,
-        total_fat: adjustedNutrition.fat,
-        total_fiber: adjustedNutrition.fiber,
-        total_sugar: adjustedNutrition.sugar,
-        total_sodium: adjustedNutrition.sodium,
+        calories: adjustedNutrition.calories,
+        protein: adjustedNutrition.protein,
+        carbs: adjustedNutrition.carbs,
+        fat: adjustedNutrition.fat,
+        fiber: adjustedNutrition.fiber,
+        sugar: adjustedNutrition.sugar,
+        folic_acid: adjustedNutrition.folic_acid,
+        vitamin_d: adjustedNutrition.vitamin_d,
+        vitamin_b12: adjustedNutrition.vitamin_b12,
+        vitamin_c: adjustedNutrition.vitamin_c,
+        zinc: adjustedNutrition.zinc,
+        iodium: adjustedNutrition.iodium,
+        water: adjustedNutrition.water,
+        iron: adjustedNutrition.iron,
       });
     } else {
-      user.nutrition_stats[statsIndex].total_calories += adjustedNutrition.calories;
-      user.nutrition_stats[statsIndex].total_protein += adjustedNutrition.protein;
-      user.nutrition_stats[statsIndex].total_carbs += adjustedNutrition.carbs;
-      user.nutrition_stats[statsIndex].total_fat += adjustedNutrition.fat;
-      user.nutrition_stats[statsIndex].total_fiber += adjustedNutrition.fiber;
-      user.nutrition_stats[statsIndex].total_sugar += adjustedNutrition.sugar;
-      user.nutrition_stats[statsIndex].total_sodium += adjustedNutrition.sodium;
+      user.nutrition_stats[statsIndex].calories += adjustedNutrition.calories;
+      user.nutrition_stats[statsIndex].protein += adjustedNutrition.protein;
+      user.nutrition_stats[statsIndex].carbs += adjustedNutrition.carbs;
+      user.nutrition_stats[statsIndex].fat += adjustedNutrition.fat;
+      user.nutrition_stats[statsIndex].fiber += adjustedNutrition.fiber;
+      user.nutrition_stats[statsIndex].sugar += adjustedNutrition.sugar;
+      user.nutrition_stats[statsIndex].sodium += adjustedNutrition.sodium;
+      user.nutrition_stats[statsIndex].folic_acid += adjustedNutrition.folic_acid;
+      user.nutrition_stats[statsIndex].kalsium += adjustedNutrition.kalsium;
+      user.nutrition_stats[statsIndex].vitamin_d += adjustedNutrition.vitamin_d;
+      user.nutrition_stats[statsIndex].vitamin_b12 += adjustedNutrition.vitamin_b12;
+      user.nutrition_stats[statsIndex].vitamin_c += adjustedNutrition.vitamin_c;
+      user.nutrition_stats[statsIndex].iodium += adjustedNutrition.iodium;
+      user.nutrition_stats[statsIndex].water += adjustedNutrition.water;
+      user.nutrition_stats[statsIndex].iron += adjustedNutrition.iron;
     }
 
     // Update meal log
@@ -130,14 +147,27 @@ const addConsumption = async (req, res) => {
 
 // Helper function
 function calculateAdjustedNutrition(nutritionInfo, portion_size) {
+  const safeMultiply = (value) => {
+    const number = Number(value);
+    return isNaN(number) ? 0 : number * portion_size;
+  };
+
   return {
-    calories: nutritionInfo.calories * portion_size,
-    protein: nutritionInfo.protein * portion_size,
-    carbs: nutritionInfo.carbs * portion_size,
-    fat: nutritionInfo.fat * portion_size,
-    fiber: nutritionInfo.fiber * portion_size,
-    sugar: nutritionInfo.sugar * portion_size,
-    sodium: nutritionInfo.sodium * portion_size,
+    calories: safeMultiply(nutritionInfo.calories),
+    protein: safeMultiply(nutritionInfo.protein),
+    carbs: safeMultiply(nutritionInfo.carbs),
+    fat: safeMultiply(nutritionInfo.fat),
+    fiber: safeMultiply(nutritionInfo.fiber),
+    sugar: safeMultiply(nutritionInfo.sugar),
+    sodium: safeMultiply(nutritionInfo.sodium),
+    folic_acid: safeMultiply(nutritionInfo.folic_acid),
+    kalsium: safeMultiply(nutritionInfo.kalsium),
+    vitamin_d: safeMultiply(nutritionInfo.vitamin_d),
+    vitamin_b12: safeMultiply(nutritionInfo.vitamin_b12),
+    vitamin_c: safeMultiply(nutritionInfo.vitamin_c),
+    iodium: safeMultiply(nutritionInfo.iodium),
+    water: safeMultiply(nutritionInfo.water),
+    iron: safeMultiply(nutritionInfo.iron),
   };
 }
 

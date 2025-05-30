@@ -58,7 +58,6 @@ const scanProduct = async (req, res) => {
         folic_acid: calculateNutrition(nutriments["folic-acid_100g"], nutriments["folic-acid"], nutriments["folic-acid_unit"]),
         kalsium: calculateNutrition(nutriments["calcium_100g"], nutriments["calcium"], nutriments["calcium_unit"]),
         vitamin_d: calculateNutrition(nutriments["vitamin-d_100g"], nutriments["vitamin-d"], nutriments["vitamin-d_unit"]),
-        vitamin_b16: calculateNutrition(nutriments["vitamin-b6_100g"], nutriments["vitamin-b6"], nutriments["vitamin-b6_unit"]),
         vitamin_b12: calculateNutrition(nutriments["vitamin-b12_100g"], nutriments["vitamin-b12"], nutriments["vitamin-b12_unit"]),
         vitamin_c: calculateNutrition(nutriments["vitamin-c_100g"], nutriments["vitamin-c"], nutriments["vitamin-c_unit"]),
         zinc: calculateNutrition(nutriments["zinc_100g"], nutriments["zinc"], nutriments["zinc_unit"]),
@@ -80,7 +79,9 @@ const scanProduct = async (req, res) => {
 
       try {
         await newFoodCache.save();
+        console.log("Produk berhasil disimpan:", product.code);
       } catch (err) {
+        console.error("Gagal menyimpan produk:", err);
         if (err.code === 11000) {
           cachedProduct = await FoodBarcode.findOne({ barcode });
         } else {
