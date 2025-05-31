@@ -181,51 +181,79 @@ const generateRecipe = async (req, res) => {
 
   try {
     // Membuat prompt dengan kekurangan nutrisi
-    const prompt = `Saya ingin membuat resep makanan dari bahan berikut: ${ingredients.join(", ")}.
-        Tingkat kesulitan: ${difficulty}.
-        Jenis masakan: ${cuisine}.
-        Berikut adalah target nutrisi saya hari ini:
-        - Kalori: ${daily_nutrition_target.calories}
-        - Protein: ${daily_nutrition_target.protein}
-        - Karbohidrat: ${daily_nutrition_target.carbs}
-        - Lemak: ${daily_nutrition_target.fat}
-        - Serat: ${daily_nutrition_target.fiber}
-        - Gula: ${daily_nutrition_target.sugar}
-        - Natrium: ${daily_nutrition_target.sodium}
-        
-        Namun, saya telah mengonsumsi makanan berikut pada hari ini:
-        - Kalori: ${nutrition_stats?.total_calories || 0}
-        - Protein: ${nutrition_stats?.total_protein || 0}
-        - Karbohidrat: ${nutrition_stats?.total_carbs || 0}
-        - Lemak: ${nutrition_stats?.total_fat || 0}
-        - Serat: ${nutrition_stats?.total_fiber || 0}
-        - Gula: ${nutrition_stats?.total_sugar || 0}
-        - Natrium: ${nutrition_stats?.total_sodium || 0}
-        
-        Tolong bantu saya membuat resep yang tidak hanya menggunakan bahan tersebut, tetapi juga membantu saya memenuhi kekurangan nutrisi ini.
-        
-        Balas dalam format JSON berikut:
-        
-        {
-          "title": "...",
-          "bahan": [
-            {
-              "name": "...",
-              "quantity": ...,
-              "unit": "..."
-            }
-          ],
-          "langkah": ["..."],
-          "gizi": {
-            "calories": ...,
-            "carbs": ...,
-            "protein": ...,
-            "fat": ...,
-            "sugar": ...,
-            "sodium": ...,
-            "fiber": ...
+    const prompt = `Saya adalah ibu hamil yang ingin membuat resep makanan dari bahan berikut: ${ingredients.join(", ")}.
+      Tingkat kesulitan resep: ${difficulty}.
+      Jenis masakan: ${cuisine}.
+
+      Berikut adalah target kebutuhan nutrisi harian saya selama kehamilan:
+      - Kalori: ${daily_nutrition_target.calories} kkal
+      - Protein: ${daily_nutrition_target.protein} g
+      - Karbohidrat: ${daily_nutrition_target.carbs} g
+      - Lemak: ${daily_nutrition_target.fat} g
+      - Serat: ${daily_nutrition_target.fiber} g
+      - Gula: ${daily_nutrition_target.sugar} g
+      - Natrium: ${daily_nutrition_target.sodium} mg
+      - Asam folat (Folic Acid): ${daily_nutrition_target.folic_acid} µg
+      - Kalsium: ${daily_nutrition_target.kalsium} mg
+      - Vitamin D: ${daily_nutrition_target.vitamin_d} µg
+      - Vitamin B12: ${daily_nutrition_target.vitamin_b12} µg
+      - Vitamin C: ${daily_nutrition_target.vitamin_c} mg
+      - Zat besi (Iron): ${daily_nutrition_target.iron} mg
+      - Zinc: ${daily_nutrition_target.zinc} mg
+      - Iodium: ${daily_nutrition_target.iodium} µg
+      - Air: ${daily_nutrition_target.water} ml
+
+      Namun, saya telah mengonsumsi makanan berikut pada hari ini:
+      - Kalori: ${nutrition_stats?.total_calories || 0} kkal
+      - Protein: ${nutrition_stats?.total_protein || 0} g
+      - Karbohidrat: ${nutrition_stats?.total_carbs || 0} g
+      - Lemak: ${nutrition_stats?.total_fat || 0} g
+      - Serat: ${nutrition_stats?.total_fiber || 0} g
+      - Gula: ${nutrition_stats?.total_sugar || 0} g
+      - Natrium: ${nutrition_stats?.total_sodium || 0} mg
+      - Asam folat (Folic Acid): ${nutrition_stats?.total_folic_acid || 0} µg
+      - Kalsium: ${nutrition_stats?.total_kalsium || 0} mg
+      - Vitamin D: ${nutrition_stats?.total_vitamin_d || 0} µg
+      - Vitamin B12: ${nutrition_stats?.total_vitamin_b12 || 0} µg
+      - Vitamin C: ${nutrition_stats?.total_vitamin_c || 0} mg
+      - Zat besi (Iron): ${nutrition_stats?.total_iron || 0} mg
+      - Zinc: ${nutrition_stats?.total_zinc || 0} mg
+      - Iodium: ${nutrition_stats?.total_iodium || 0} µg
+      - Air: ${nutrition_stats?.total_water || 0} ml
+
+      Tolong bantu saya membuat resep yang menggunakan bahan-bahan tersebut dan membantu saya memenuhi kekurangan nutrisi harian saya sebagai ibu hamil.
+
+      Balas dalam format JSON berikut:
+
+      {
+        "title": "...",
+        "bahan": [
+          {
+            "name": "...",
+            "quantity": ...,
+            "unit": "..."
           }
-        }`;
+        ],
+        "langkah": ["..."],
+        "gizi": {
+          "calories": ...,
+          "protein": ...,
+          "carbs": ...,
+          "fat": ...,
+          "fiber": ...,
+          "sugar": ...,
+          "sodium": ...,
+          "folic_acid": ...,
+          "kalsium": ...,
+          "vitamin_d": ...,
+          "vitamin_b12": ...,
+          "vitamin_c": ...,
+          "zinc": ...,
+          "iodium": ...,
+          "iron": ...,
+          "water": ...
+        }
+    }`;
 
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
