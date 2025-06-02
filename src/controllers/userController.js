@@ -165,6 +165,7 @@ function calculateAdjustedNutrition(nutritionInfo, portion_size) {
     vitamin_d: safeMultiply(nutritionInfo.vitamin_d),
     vitamin_b12: safeMultiply(nutritionInfo.vitamin_b12),
     vitamin_c: safeMultiply(nutritionInfo.vitamin_c),
+    zinc: safeMultiply(nutritionInfo.zinc),
     iodium: safeMultiply(nutritionInfo.iodium),
     water: safeMultiply(nutritionInfo.water),
     iron: safeMultiply(nutritionInfo.iron),
