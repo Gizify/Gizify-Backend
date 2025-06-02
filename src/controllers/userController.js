@@ -153,22 +153,22 @@ function calculateAdjustedNutrition(nutritionInfo, portion_size) {
   };
 
   return {
-    calories: safeMultiply(nutritionInfo.calories),
-    protein: safeMultiply(nutritionInfo.protein),
-    carbs: safeMultiply(nutritionInfo.carbs),
-    fat: safeMultiply(nutritionInfo.fat),
-    fiber: safeMultiply(nutritionInfo.fiber),
-    sugar: safeMultiply(nutritionInfo.sugar),
-    sodium: safeMultiply(nutritionInfo.sodium),
-    folic_acid: safeMultiply(nutritionInfo.folic_acid),
-    kalsium: safeMultiply(nutritionInfo.kalsium),
-    vitamin_d: safeMultiply(nutritionInfo.vitamin_d),
-    vitamin_b12: safeMultiply(nutritionInfo.vitamin_b12),
-    vitamin_c: safeMultiply(nutritionInfo.vitamin_c),
-    zinc: safeMultiply(nutritionInfo.zinc),
-    iodium: safeMultiply(nutritionInfo.iodium),
-    water: safeMultiply(nutritionInfo.water),
-    iron: safeMultiply(nutritionInfo.iron),
+    calories: safeMultiply(nutritionInfo?.calories ?? 0),
+    protein: safeMultiply(nutritionInfo?.protein ?? 0),
+    carbs: safeMultiply(nutritionInfo?.carbs ?? 0),
+    fat: safeMultiply(nutritionInfo?.fat ?? 0),
+    fiber: safeMultiply(nutritionInfo?.fiber ?? 0),
+    sugar: safeMultiply(nutritionInfo?.sugar ?? 0),
+    sodium: safeMultiply(nutritionInfo?.sodium ?? 0),
+    folic_acid: safeMultiply(nutritionInfo?.folic_acid ?? 0),
+    kalsium: safeMultiply(nutritionInfo?.kalsium ?? 0),
+    vitamin_d: safeMultiply(nutritionInfo?.vitamin_d ?? 0),
+    vitamin_b12: safeMultiply(nutritionInfo?.vitamin_b12 ?? 0),
+    vitamin_c: safeMultiply(nutritionInfo?.vitamin_c ?? 0),
+    zinc: safeMultiply(nutritionInfo?.zinc ?? 0),
+    iodium: safeMultiply(nutritionInfo?.iodium ?? 0),
+    water: safeMultiply(nutritionInfo?.water ?? 0),
+    iron: safeMultiply(nutritionInfo?.iron ?? 0),
   };
 }
 
