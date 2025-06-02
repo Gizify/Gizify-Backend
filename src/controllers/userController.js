@@ -5,6 +5,10 @@ const Recipe = require("../models/Recipe");
 const axios = require("axios");
 const mongoose = require("mongoose");
 
+function safeAdd(target, key, value) {
+  target[key] = (target[key] || 0) + (value || 0);
+}
+
 const addConsumption = async (req, res) => {
   try {
     const { userId } = req;
@@ -50,8 +54,6 @@ const addConsumption = async (req, res) => {
       return entryDate.toISODate() === userToday.toISODate();
     });
 
-    console.log(todayStart);
-
     if (statsIndex === -1) {
       user.nutrition_stats.push({
         date: todayStart,
@@ -71,21 +73,9 @@ const addConsumption = async (req, res) => {
         iron: adjustedNutrition.iron,
       });
     } else {
-      user.nutrition_stats[statsIndex].calories += adjustedNutrition.calories;
-      user.nutrition_stats[statsIndex].protein += adjustedNutrition.protein;
-      user.nutrition_stats[statsIndex].carbs += adjustedNutrition.carbs;
-      user.nutrition_stats[statsIndex].fat += adjustedNutrition.fat;
-      user.nutrition_stats[statsIndex].fiber += adjustedNutrition.fiber;
-      user.nutrition_stats[statsIndex].sugar += adjustedNutrition.sugar;
-      user.nutrition_stats[statsIndex].sodium += adjustedNutrition.sodium;
-      user.nutrition_stats[statsIndex].folic_acid += adjustedNutrition.folic_acid;
-      user.nutrition_stats[statsIndex].kalsium += adjustedNutrition.kalsium;
-      user.nutrition_stats[statsIndex].vitamin_d += adjustedNutrition.vitamin_d;
-      user.nutrition_stats[statsIndex].vitamin_b12 += adjustedNutrition.vitamin_b12;
-      user.nutrition_stats[statsIndex].vitamin_c += adjustedNutrition.vitamin_c;
-      user.nutrition_stats[statsIndex].iodium += adjustedNutrition.iodium;
-      user.nutrition_stats[statsIndex].water += adjustedNutrition.water;
-      user.nutrition_stats[statsIndex].iron += adjustedNutrition.iron;
+      [("calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "folic_acid", "kalsium", "vitamin_d", "vitamin_b12", "vitamin_c", "iodium", "water", "iron")].forEach((key) =>
+        safeAdd(user.nutrition_stats[statsIndex], key, adjustedNutrition[key])
+      );
     }
 
     // Update meal log
