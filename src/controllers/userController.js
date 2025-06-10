@@ -73,9 +73,9 @@ const addConsumption = async (req, res) => {
         iron: adjustedNutrition.iron,
       });
     } else {
-      [("calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "folic_acid", "kalsium", "vitamin_d", "vitamin_b12", "vitamin_c", "iodium", "water", "iron")].forEach((key) =>
-        safeAdd(user.nutrition_stats[statsIndex], key, adjustedNutrition[key])
-      );
+      ["calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "folic_acid", "kalsium", "vitamin_d", "vitamin_b12", "vitamin_c", "zinc", "iodium", "water", "iron"].forEach((key) => {
+        safeAdd(user.nutrition_stats[statsIndex], key, adjustedNutrition[key]);
+      });
     }
 
     // Update meal log
