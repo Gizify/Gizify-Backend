@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const FoodBarcode = require("../models/FoodBarcode");
+const FoodNutrients = require("../models/FoodNutrient");
 const { DateTime } = require("luxon");
 const Recipe = require("../models/Recipe");
 const axios = require("axios");
@@ -324,4 +325,127 @@ const deleteAccount = async (req, res) => {
   }
 };
 
-module.exports = { addConsumption, generateRecipe, deleteAccount };
+const getNutrition = async (req, res, next) => {
+  try {
+    const { ingredients } = req.body;
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
+      return res.status(400).json({ error: "ingredients must be a non-empty array" });
+    }
+
+    // 1. Panggil OpenAI untuk standardisasi & translate & unit conversion
+    const prompt1 = `
+You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
+- name_en: corrected English name of the ingredient (match USDA standard)
+- quantity: numeric amount
+- unit: "g" or "ml" (converted from input like sdm, piring, gelas)
+
+Input:
+${ingredients.map((i) => `- ${i}`).join("\n")}
+
+Output ONLY valid JSON array.
+`;
+
+    const stdResp = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a helpful assistant." },
+          { role: "user", content: prompt1 },
+        ],
+        temperature: 0.2,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.AI_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    let content = stdResp.data.choices[0].message.content;
+
+    content = content.replace(/```json|```/g, "").trim();
+
+    const parsed = JSON.parse(content);
+
+    const results = [];
+
+    for (const item of parsed) {
+      const { name_en, quantity, unit } = item;
+
+      // Cek di MongoDB
+      const docs = await FoodNutrients.aggregate([
+        {
+          $match: {
+            Food: { $regex: name_en, $options: "i" },
+          },
+        },
+        {
+          $addFields: {
+            matchScore: {
+              $subtract: [100, { $strLenCP: name_en }],
+            },
+          },
+        },
+        { $sort: { matchScore: -1 } },
+        { $limit: 5 },
+      ]);
+      if (docs.length) {
+        const factor = quantity / 100;
+        const nutrients = docs.map((d) => ({
+          nutrient: d.Nutrient,
+          value: +(d.Amount * factor).toFixed(2),
+          unit: d.Unit,
+          source: "USDA",
+        }));
+        results.push({ name_en, quantity, unit, nutrients });
+      } else {
+        // Estimasi AI jika tidak ada di Mongo
+        const estPrompt = `
+Estimate nutrition for ${quantity}${unit} of ${name_en}.
+Return JSON array with: nutrient, value, unit.
+only JSON NO MORE JUST JSON!!!
+`;
+
+        const estResp = await axios.post(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: "You are a nutrition expert." },
+              { role: "user", content: estPrompt },
+            ],
+            temperature: 0.2,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.AI_KEY}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        let estContent = estResp.data.choices[0].message.content;
+
+        estContent = estContent.replace(/```json|```/g, "").trim();
+
+        const estNutrients = JSON.parse(estContent);
+
+        const nutrients = estNutrients.map((n) => ({
+          ...n,
+          source: "AI",
+        }));
+
+        results.push({ name_en, quantity, unit, nutrients });
+      }
+    }
+
+    res.json({ ingredients: results });
+  } catch (err) {
+    console.error("Error:", err.message);
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
+  }
+};
+
+module.exports = { addConsumption, generateRecipe, deleteAccount, getNutrition };
