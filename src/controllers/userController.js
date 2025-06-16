@@ -334,16 +334,16 @@ const getNutrition = async (req, res, next) => {
 
     // 1. Panggil OpenAI untuk standardisasi & translate & unit conversion
     const prompt1 = `
-You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
-- name_en: corrected English name of the ingredient (match USDA standard)
-- quantity: numeric amount
-- unit: "g" or "ml" (converted from input like sdm, piring, gelas)
+        You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
+        - name_en: corrected English name of the ingredient (match USDA standard)
+        - quantity: numeric amount
+        - unit: "g" or "ml" (converted from input like sdm, piring, gelas)
 
-Input:
-${ingredients.map((i) => `- ${i}`).join("\n")}
+        Input:
+        ${ingredients.map((i) => `- ${i}`).join("\n")}
 
-Output ONLY valid JSON array.
-`;
+        Output ONLY valid JSON array.
+        `;
 
     const stdResp = await axios.post(
       "https://api.openai.com/v1/chat/completions",
