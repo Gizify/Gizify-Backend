@@ -6,6 +6,14 @@ const IngredientSchema = new mongoose.Schema(
     name: String,
     quantity: Number,
     unit: String,
+    nutrients: [
+      {
+        nutrient: String,
+        value: Number,
+        unit: String,
+        source: String,
+      },
+    ],
   },
   { _id: false }
 );
