@@ -45,18 +45,31 @@ const registerUser = async (req, res) => {
   }
 };
 
+const calculateTrimester = (gestational_age) => {
+  if (gestational_age <= 13) return 1;
+  if (gestational_age <= 27) return 2;
+  return 3;
+};
+
 // lengkapi data pengguna untuk ibu hamil
 const completeUserProfile = async (req, res) => {
   const { userId } = req;
-  const { height, weight, activity, birthdate, gestational_age, photoOption } = req.body;
+  const { height, weight, activity, birthdate, gestational_age, photoOption, medical_history = [] } = req.body;
 
   try {
+    const user = await User.findById(userId);
+    const newTrimester = calculateTrimester(gestational_age);
+
+    const trimesterChanged = user && user.trimester && user.trimester !== newTrimester;
+
     const nutritionTarget = calculateDailyNutritionTarget({
       weight,
       height,
       birthdate,
       activity_level: activity,
       gestational_age,
+      trimester: newTrimester,
+      medical_history,
     });
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -67,13 +80,20 @@ const completeUserProfile = async (req, res) => {
         weight,
         activity_level: activity,
         gestational_age,
+        trimester: newTrimester,
+        medical_history,
         daily_nutrition_target: nutritionTarget,
         photoOption,
       },
       { new: true }
     );
 
-    res.status(200).json({ message: "Profil berhasil dilengkapi!", user: updatedUser });
+    let message = "Profil berhasil dilengkapi!";
+    if (trimesterChanged) {
+      message += " Trimester Anda telah berubah. Data nutrisi telah diperbarui.";
+    }
+
+    res.status(200).json({ message, user: updatedUser });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Gagal melengkapi data profil." });
