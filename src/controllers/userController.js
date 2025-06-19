@@ -6,6 +6,7 @@ const Recipe = require("../models/Recipe");
 const axios = require("axios");
 const mongoose = require("mongoose");
 const analyzeNutrition = require("../utils/nutrition");
+const UserRecipe = require("../models/UserRecipe");
 
 function safeAdd(target, key, value) {
   target[key] = (target[key] || 0) + (value || 0);
@@ -166,161 +167,32 @@ function calculateAdjustedNutrition(nutritionInfo, portion_size) {
 
 const getNutrition = async (req, res, next) => {
   try {
-    const { ingredients } = req.body;
-    if (!Array.isArray(ingredients) || ingredients.length === 0) {
-      return res.status(400).json({ error: "ingredients must be a non-empty array" });
+    const { title, ingredients } = req.body;
+
+    if (!title || !Array.isArray(ingredients) || ingredients.length === 0) {
+      return res.status(400).json({ error: "Title and valid ingredients are required." });
     }
 
-    const prompt1 = `
-      You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
-      - name_en: corrected English name of the ingredient (match USDA standard)
-      - quantity: numeric amount
-      - unit: "g" or "ml" (converted from input like sdm, piring, gelas)
+    // Jalankan analisis nutrisi
+    const result = await analyzeNutrition(ingredients);
 
-      Input:
-      ${ingredients.map((i) => `- ${i}`).join("\n")}
-
-      Output ONLY valid JSON array.
-      `;
-
-    const stdResp = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: prompt1 },
-        ],
-        temperature: 0.2,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.AI_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    let content = stdResp.data.choices[0].message.content;
-    content = content.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(content);
-
-    const results = [];
-
-    for (const item of parsed) {
-      const { name_en, quantity, unit } = item;
-
-      const docs = await FoodNutrients.aggregate([
-        {
-          $match: {
-            Food: { $regex: name_en, $options: "i" },
-          },
-        },
-        {
-          $addFields: {
-            matchScore: {
-              $subtract: [100, { $strLenCP: name_en }],
-            },
-          },
-        },
-        { $sort: { matchScore: -1 } },
-        { $limit: 5 },
-      ]);
-
-      if (docs.length) {
-        const factor = quantity / 100;
-        const nutrients = docs.map((d) => ({
-          nutrient: d.Nutrient,
-          value: +(d.Amount * factor).toFixed(2),
-          unit: d.Unit,
-          source: "USDA",
-        }));
-        results.push({ name_en, quantity, unit, nutrients });
-      } else {
-        const estPrompt = `
-Estimate nutrition for ${quantity}${unit} of ${name_en}.
-Return JSON array with: nutrient, value, unit.
-only JSON NO MORE JUST JSON!!!
-`;
-
-        const estResp = await axios.post(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            model: "gpt-4o",
-            messages: [
-              { role: "system", content: "You are a nutrition expert." },
-              { role: "user", content: estPrompt },
-            ],
-            temperature: 0.2,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.AI_KEY}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        let estContent = estResp.data.choices[0].message.content;
-        estContent = estContent.replace(/```json|```/g, "").trim();
-
-        const estNutrients = JSON.parse(estContent);
-        const nutrients = estNutrients.map((n) => ({
-          ...n,
-          source: "AI",
-        }));
-
-        results.push({ name_en, quantity, unit, nutrients });
-      }
-    }
-
-    // === AGREGASI KE DALAM NutritionInfoSchema ===
-    const nutrientMap = {
-      calories: ["energy", "calories", "kcal"],
-      protein: ["protein"],
-      carbs: ["carbohydrate", "carbs"],
-      fat: ["fat", "total fat"],
-      fiber: ["fiber", "dietary fiber"],
-      sugar: ["sugar", "sugars"],
-      sodium: ["sodium", "salt"],
-      folic_acid: ["folic acid", "folate"],
-      kalsium: ["calcium", "kalsium"],
-      vitamin_d: ["vitamin d"],
-      vitamin_b12: ["vitamin b12"],
-      vitamin_c: ["vitamin c", "ascorbic acid"],
-      zinc: ["zinc"],
-      iodium: ["iodine", "iodium"],
-      water: ["water", "moisture"],
-      iron: ["iron"],
-    };
-
-    const nutritionInfo = Object.keys(nutrientMap).reduce((obj, key) => {
-      obj[key] = 0;
-      return obj;
-    }, {});
-
-    for (const ingredient of results) {
-      for (const nutrient of ingredient.nutrients) {
-        const name = nutrient.nutrient.toLowerCase();
-        const value = Number(nutrient.value) || 0;
-        for (const key in nutrientMap) {
-          if (nutrientMap[key].some((alias) => name.includes(alias))) {
-            nutritionInfo[key] += value;
-            break;
-          }
-        }
-      }
-    }
-
-    nutritionInfo.date = new Date().toISOString();
-
-    res.json({
-      ingredients: results,
-      nutrition_summary: nutritionInfo,
+    // Buat dokumen baru
+    const newRecipe = new UserRecipe({
+      title,
+      ingredients: result.ingredients,
+      nutrition_info: result.nutrition_summary,
     });
-  } catch (err) {
-    console.error("Error:", err.message);
-    res.status(500).json({ error: "Internal Server Error", details: err.message });
+
+    // Simpan ke database
+    await newRecipe.save();
+
+    res.status(201).json({
+      message: "Recipe saved successfully.",
+      data: newRecipe,
+    });
+  } catch (error) {
+    console.error("Error analyzing or saving recipe:", error);
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
