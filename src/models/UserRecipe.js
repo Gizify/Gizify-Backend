@@ -5,6 +5,7 @@ const NutritionInfoSchema = require("./NutritionInfoSchema");
 const IngredientSchema = new mongoose.Schema(
   {
     name: String,
+    name_en: String,
     quantity: Number,
     unit: String,
     nutrients: [

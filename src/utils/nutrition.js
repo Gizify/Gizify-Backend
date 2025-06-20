@@ -28,8 +28,9 @@ const analyzeNutrition = async (ingredients = []) => {
   const prompt1 = `
       You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
       - name_en: corrected English name of the ingredient (match USDA standard)
+      - name_id: corrected Indonesian name of the ingredient
       - quantity: numeric amount
-      - unit: "g" or "ml" (converted from input like sdm, piring, gelas)
+      - unit: \"g\" or \"ml\" (converted from input like sdm, piring, gelas)
 
       Input:
       ${ingredients.map((i) => `- ${i}`).join("\n")}
@@ -62,18 +63,19 @@ const analyzeNutrition = async (ingredients = []) => {
   const results = [];
 
   for (const item of parsed) {
-    const { name_en, quantity, unit } = item;
+    const { name_en, name_id, quantity, unit } = item;
 
-    const docs = await FoodNutrients.aggregate([
+    // Cari dari koleksi lokal (TKPI)
+    const localDocs = await FoodNutrients.aggregate([
       {
         $match: {
-          Food: { $regex: name_en, $options: "i" },
+          Food: { $regex: name_id, $options: "i" },
         },
       },
       {
         $addFields: {
           matchScore: {
-            $subtract: [100, { $strLenCP: name_en }],
+            $subtract: [100, { $strLenCP: name_id }],
           },
         },
       },
@@ -81,58 +83,35 @@ const analyzeNutrition = async (ingredients = []) => {
       { $limit: 5 },
     ]);
 
-    const usdaNutrients = docs.map((d) => ({
+    const tkpiNutrients = localDocs.map((d) => ({
       nutrient: d.Nutrient,
       value: +(d.Amount * (quantity / 100)).toFixed(2),
       unit: d.Unit,
-      source: "USDA",
+      source: "TKPI",
     }));
 
-    // Deteksi apakah USDA mengandung nutrisi utama
-    const usdaNutrientNames = usdaNutrients.map((n) => n.nutrient.toLowerCase());
-    const containsMainNutrient = Object.keys(nutrientMap).every((key) => nutrientMap[key].some((alias) => usdaNutrientNames.some((name) => name.includes(alias))));
+    // Jika dari TKPI tidak lengkap, ambil dari USDA
+    let usdaNutrients = [];
+    try {
+      const usdaResp = await axios.get(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name_en)}&pageSize=1&api_key=${process.env.USDA_KEY}`);
 
-    let aiNutrients = [];
+      const foodItem = usdaResp.data.foods[0];
 
-    // Hanya estimasi dari AI jika tidak ada nutrisi utama
-    if (!containsMainNutrient) {
-      const estPrompt = `
-Estimate nutrition for ${quantity}${unit} of ${name_en}.
-Return JSON array with: nutrient, value, unit.
-only JSON NO MORE JUST JSON!!!
-`;
-
-      const estResp = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: "You are a nutrition expert." },
-            { role: "user", content: estPrompt },
-          ],
-          temperature: 0.2,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.AI_KEY}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      let estContent = estResp.data.choices[0].message.content;
-      estContent = estContent.replace(/```json|```/g, "").trim();
-
-      aiNutrients = JSON.parse(estContent).map((n) => ({
-        ...n,
-        source: "AI",
-      }));
+      if (foodItem) {
+        usdaNutrients = foodItem.foodNutrients.map((n) => ({
+          nutrient: n.nutrientName,
+          value: +(n.value * (quantity / 100)).toFixed(2),
+          unit: n.unitName,
+          source: "USDA",
+        }));
+      }
+    } catch (err) {
+      console.warn("USDA error:", err.message);
     }
 
-    // Gabungkan hasil USDA dan AI
-    const combinedNutrients = [...usdaNutrients, ...aiNutrients];
+    const combinedNutrients = [...tkpiNutrients, ...usdaNutrients];
 
-    results.push({ name_en, quantity, unit, nutrients: combinedNutrients });
+    results.push({ name: name_id, name_en, quantity, unit, nutrients: combinedNutrients });
   }
 
   const nutritionInfo = Object.keys(nutrientMap).reduce((obj, key) => {
