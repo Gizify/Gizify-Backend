@@ -26,17 +26,17 @@ const analyzeNutrition = async (ingredients = []) => {
   }
 
   const prompt1 = `
-      You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
-      - name_en: corrected English name of the ingredient (match USDA standard)
-      - name_id: corrected Indonesian name of the ingredient
-      - quantity: numeric amount
-      - unit: \"g\" or \"ml\" (converted from input like sdm, piring, gelas)
+    You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
+    - name_en: corrected English name of the ingredient (match USDA standard)
+    - name_id: corrected Indonesian name of the ingredient
+    - quantity: numeric amount
+    - unit: "g" or "ml" (converted from input like sdm, piring, gelas)
 
-      Input:
-      ${ingredients.map((i) => `- ${i}`).join("\n")}
+    Input:
+    ${ingredients.map((i) => `- ${i}`).join("\n")}
 
-      Output ONLY valid JSON array.
-      `;
+    Output ONLY valid JSON array.
+  `;
 
   const stdResp = await axios.post(
     "https://api.openai.com/v1/chat/completions",
@@ -90,46 +90,60 @@ const analyzeNutrition = async (ingredients = []) => {
       source: "TKPI",
     }));
 
-    // Jika dari TKPI tidak lengkap, ambil dari USDA
-    let usdaNutrients = [];
-    try {
-      const usdaResp = await axios.get(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name_en)}&pageSize=1&api_key=${process.env.USDA_KEY}`);
-
-      const foodItem = usdaResp.data.foods[0];
-
-      if (foodItem) {
-        usdaNutrients = foodItem.foodNutrients.map((n) => ({
-          nutrient: n.nutrientName,
-          value: +(n.value * (quantity / 100)).toFixed(2),
-          unit: n.unitName,
-          source: "USDA",
-        }));
-      }
-    } catch (err) {
-      console.warn("USDA error:", err.message);
-    }
-
-    const combinedNutrients = [...tkpiNutrients, ...usdaNutrients];
-
-    results.push({ name: name_id, name_en, quantity, unit, nutrients: combinedNutrients });
-  }
-
-  const nutritionInfo = Object.keys(nutrientMap).reduce((obj, key) => {
-    obj[key] = 0;
-    return obj;
-  }, {});
-
-  for (const ingredient of results) {
-    for (const nutrient of ingredient.nutrients) {
+    // Periksa apakah semua nutrisi utama sudah tersedia
+    const foundKeys = new Set();
+    for (const nutrient of tkpiNutrients) {
       const name = nutrient.nutrient.toLowerCase();
-      const value = Number(nutrient.value) || 0;
       for (const key in nutrientMap) {
         if (nutrientMap[key].some((alias) => name.includes(alias))) {
-          nutritionInfo[key] += value;
-          break;
+          foundKeys.add(key);
         }
       }
     }
+
+    let usdaNutrients = [];
+    const missingKeys = Object.keys(nutrientMap).filter((k) => !foundKeys.has(k));
+
+    // Jika masih ada nutrisi utama yang belum tersedia, panggil USDA
+    if (missingKeys.length > 0) {
+      try {
+        const usdaResp = await axios.get(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name_en)}&pageSize=1&api_key=${process.env.USDA_KEY}`);
+
+        const foodItem = usdaResp.data.foods?.[0];
+        if (foodItem) {
+          usdaNutrients = foodItem.foodNutrients.map((n) => ({
+            nutrient: n.nutrientName,
+            value: +(n.value * (quantity / 100)).toFixed(2),
+            unit: n.unitName,
+            source: "USDA",
+          }));
+        }
+      } catch (err) {
+        console.warn("USDA error:", err.message);
+      }
+    }
+
+    const combinedNutrients = [...tkpiNutrients, ...usdaNutrients];
+    results.push({ name: name_id, name_en, quantity, unit, nutrients: combinedNutrients });
+  }
+
+  // Gabungkan nutrisi untuk semua bahan
+  const nutritionInfo = {};
+  for (const key in nutrientMap) {
+    let total = 0;
+    let found = false;
+
+    for (const ingredient of results) {
+      for (const nutrient of ingredient.nutrients) {
+        const name = nutrient.nutrient.toLowerCase();
+        if (nutrientMap[key].some((alias) => name.includes(alias))) {
+          total += Number(nutrient.value) || 0;
+          found = true;
+        }
+      }
+    }
+
+    nutritionInfo[key] = found ? +total.toFixed(2) : "Data tidak tersedia";
   }
 
   nutritionInfo.date = new Date().toISOString();
