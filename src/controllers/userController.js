@@ -66,20 +66,48 @@ const addConsumption = async (req, res) => {
         fat: adjustedNutrition.fat,
         fiber: adjustedNutrition.fiber,
         sugar: adjustedNutrition.sugar,
+        sodium: adjustedNutrition.sodium,
         folic_acid: adjustedNutrition.folic_acid,
+        kalsium: adjustedNutrition.kalsium,
         vitamin_d: adjustedNutrition.vitamin_d,
         vitamin_b12: adjustedNutrition.vitamin_b12,
+        vitamin_b6: adjustedNutrition.vitamin_b6,
         vitamin_c: adjustedNutrition.vitamin_c,
+        vitamin_a: adjustedNutrition.vitamin_a,
+        vitamin_e: adjustedNutrition.vitamin_e,
         zinc: adjustedNutrition.zinc,
         iodium: adjustedNutrition.iodium,
         water: adjustedNutrition.water,
         iron: adjustedNutrition.iron,
+        magnesium: adjustedNutrition.magnesium,
+        selenium: adjustedNutrition.selenium,
       });
-    } else {
-      ["calories", "protein", "carbs", "fat", "fiber", "sugar", "sodium", "folic_acid", "kalsium", "vitamin_d", "vitamin_b12", "vitamin_c", "zinc", "iodium", "water", "iron"].forEach((key) => {
+    } else
+      [
+        "calories",
+        "protein",
+        "carbs",
+        "fat",
+        "fiber",
+        "sugar",
+        "sodium",
+        "folic_acid",
+        "kalsium",
+        "vitamin_d",
+        "vitamin_b12",
+        "vitamin_b6",
+        "vitamin_c",
+        "vitamin_a",
+        "vitamin_e",
+        "zinc",
+        "iodium",
+        "water",
+        "iron",
+        "magnesium",
+        "selenium",
+      ].forEach((key) => {
         safeAdd(user.nutrition_stats[statsIndex], key, adjustedNutrition[key]);
       });
-    }
 
     // Update meal log
     let todayMealLog = user.meal_logs.find((log) => {
@@ -157,7 +185,12 @@ function calculateAdjustedNutrition(nutritionInfo, portion_size) {
     kalsium: safeMultiply(nutritionInfo?.kalsium ?? 0),
     vitamin_d: safeMultiply(nutritionInfo?.vitamin_d ?? 0),
     vitamin_b12: safeMultiply(nutritionInfo?.vitamin_b12 ?? 0),
+    vitamin_b6: safeMultiply(nutritionInfo?.vitamin_b6 ?? 0),
     vitamin_c: safeMultiply(nutritionInfo?.vitamin_c ?? 0),
+    vitamin_e: safeMultiply(nutritionInfo?.vitamin_e ?? 0),
+    vitamin_a: safeMultiply(nutritionInfo?.vitamin_a ?? 0),
+    magnesium: safeMultiply(nutritionInfo?.magnesium ?? 0),
+    selenium: safeMultiply(nutritionInfo?.selenium ?? 0),
     zinc: safeMultiply(nutritionInfo?.zinc ?? 0),
     iodium: safeMultiply(nutritionInfo?.iodium ?? 0),
     water: safeMultiply(nutritionInfo?.water ?? 0),
@@ -230,41 +263,28 @@ const generateRecipe = async (req, res) => {
       Tingkat kesulitan resep: ${difficulty}.
       Jenis masakan: ${cuisine}.
 
-      Berikut adalah target kebutuhan nutrisi harian saya selama kehamilan:
-      - Kalori: ${daily_nutrition_target.calories} kkal
-      - Protein: ${daily_nutrition_target.protein} g
-      - Karbohidrat: ${daily_nutrition_target.carbs} g
-      - Lemak: ${daily_nutrition_target.fat} g
-      - Serat: ${daily_nutrition_target.fiber} g
-      - Gula: ${daily_nutrition_target.sugar} g
-      - Natrium: ${daily_nutrition_target.sodium} mg
-      - Asam folat (Folic Acid): ${daily_nutrition_target.folic_acid} µg
-      - Kalsium: ${daily_nutrition_target.kalsium} mg
-      - Vitamin D: ${daily_nutrition_target.vitamin_d} µg
-      - Vitamin B12: ${daily_nutrition_target.vitamin_b12} µg
-      - Vitamin C: ${daily_nutrition_target.vitamin_c} mg
-      - Zat besi (Iron): ${daily_nutrition_target.iron} mg
-      - Zinc: ${daily_nutrition_target.zinc} mg
-      - Iodium: ${daily_nutrition_target.iodium} µg
-      - Air: ${daily_nutrition_target.water} ml
-
       Namun, saya telah mengonsumsi makanan berikut pada hari ini:
-      - Kalori: ${nutrition_stats?.total_calories || 0} kkal
-      - Protein: ${nutrition_stats?.total_protein || 0} g
-      - Karbohidrat: ${nutrition_stats?.total_carbs || 0} g
-      - Lemak: ${nutrition_stats?.total_fat || 0} g
-      - Serat: ${nutrition_stats?.total_fiber || 0} g
-      - Gula: ${nutrition_stats?.total_sugar || 0} g
-      - Natrium: ${nutrition_stats?.total_sodium || 0} mg
-      - Asam folat (Folic Acid): ${nutrition_stats?.total_folic_acid || 0} µg
-      - Kalsium: ${nutrition_stats?.total_kalsium || 0} mg
-      - Vitamin D: ${nutrition_stats?.total_vitamin_d || 0} µg
-      - Vitamin B12: ${nutrition_stats?.total_vitamin_b12 || 0} µg
-      - Vitamin C: ${nutrition_stats?.total_vitamin_c || 0} mg
-      - Zat besi (Iron): ${nutrition_stats?.total_iron || 0} mg
-      - Zinc: ${nutrition_stats?.total_zinc || 0} mg
-      - Iodium: ${nutrition_stats?.total_iodium || 0} µg
-      - Air: ${nutrition_stats?.total_water || 0} ml
+      - Kalori: ${nutrition_stats?.calories || 0} kkal
+      - Protein: ${nutrition_stats?.protein || 0} g
+      - Karbohidrat: ${nutrition_stats?.carbs || 0} g
+      - Lemak: ${nutrition_stats?.fat || 0} g
+      - Serat: ${nutrition_stats?.fiber || 0} g
+      - Gula: ${nutrition_stats?.sugar || 0} g
+      - Natrium: ${nutrition_stats?.sodium || 0} mg
+      - Asam folat (Folic Acid): ${nutrition_stats?.folic_acid || 0} µg
+      - Kalsium: ${nutrition_stats?.kalsium || 0} mg
+      - Vitamin D: ${nutrition_stats?.vitamin_d || 0} mg
+      - Vitamin B12: ${nutrition_stats?.vitamin_b12 || 0} mg
+      - Vitamin C: ${nutrition_stats?.vitamin_c || 0} mg
+      - Vitamin b6${nutrition_stats?.vitamin_b6 | 0} mg
+      - Vitamin e:${nutrition_stats?.vitamin_e || 0} mg
+      - Vitamin a: ${nutrition_stats?.vitamin_a || 0} mcg
+      - Magnesium: ${nutrition_stats?.magnesium || 0}mg
+      - Selenium: ${nutrition_stats?.selenium || 0}mg
+      - Zat besi (Iron): ${nutrition_stats?.iron || 0} mg
+      - Zinc: ${nutrition_stats?.zinc || 0} mg
+      - Iodium: ${nutrition_stats?.iodium || 0} µg
+      - Air: ${nutrition_stats?.water || 0} ml
 
       Tolong bantu saya membuat resep yang menggunakan bahan-bahan tersebut dan membantu saya memenuhi kekurangan nutrisi harian saya sebagai ibu hamil.
 
@@ -298,6 +318,7 @@ const generateRecipe = async (req, res) => {
     );
 
     const aiRaw = response.data.choices[0].message.content;
+    console.log(aiRaw);
     const jsonString = aiRaw.slice(aiRaw.indexOf("{"), aiRaw.lastIndexOf("}") + 1);
     const parsedResult = JSON.parse(jsonString);
 

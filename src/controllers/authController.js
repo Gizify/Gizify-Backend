@@ -45,9 +45,12 @@ const registerUser = async (req, res) => {
   }
 };
 
-const calculateTrimester = (gestational_age) => {
-  if (gestational_age <= 13) return 1;
-  if (gestational_age <= 27) return 2;
+const calculateTrimester = ({ months, days }) => {
+  const totalDays = months * 30 + days;
+  const totalWeeks = totalDays / 7;
+
+  if (totalWeeks <= 13) return 1;
+  if (totalWeeks <= 27) return 2;
   return 3;
 };
 
@@ -67,7 +70,6 @@ const completeUserProfile = async (req, res) => {
       height,
       birthdate,
       activity_level: activity,
-      gestational_age,
       trimester: newTrimester,
       medical_history,
     });

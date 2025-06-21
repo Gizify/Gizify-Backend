@@ -1,4 +1,4 @@
-function calculateDailyNutritionTarget({ weight, height, birthdate, activity_level, gestational_age, medical_history = [] }) {
+function calculateDailyNutritionTarget({ weight, height, birthdate, activity_level, trimester, medical_history = [] }) {
   const age = new Date().getFullYear() - new Date(birthdate).getFullYear();
   let bmr = 10 * weight + 6.25 * height - 5 * age - 161;
 
@@ -9,18 +9,6 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, activity_lev
   };
   const activityFactor = activityFactorMap[activity_level?.toLowerCase()] || 1.2;
   let calories = bmr * activityFactor;
-
-  // Hitung trimester
-  let trimester = 1;
-  if (gestational_age >= 13 && gestational_age <= 27) {
-    trimester = 2;
-    calories += 300;
-  } else if (gestational_age >= 28) {
-    trimester = 3;
-    calories += 450;
-  } else {
-    calories += 180;
-  }
 
   // Protein
   let baseProtein = 0.8 * weight;
@@ -45,6 +33,10 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, activity_lev
   let zinc = 11;
   let iodium = 220;
   let water = 3000;
+  let vitamin_a = 800;
+  let vitamin_e = 15;
+  let magnesium = 300;
+  let selenium = 60;
 
   // Penyesuaian penyakit
   if (medical_history.includes("diabetes")) {
@@ -84,6 +76,10 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, activity_lev
     iodium,
     water,
     iron,
+    vitamin_a,
+    vitamin_e,
+    selenium,
+    magnesium,
   };
 }
 

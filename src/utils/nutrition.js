@@ -14,11 +14,16 @@ const analyzeNutrition = async (ingredients = []) => {
     kalsium: ["calcium", "kalsium"],
     vitamin_d: ["vitamin d"],
     vitamin_b12: ["vitamin b12"],
+    vitamin_b6: ["vitamin b6"],
     vitamin_c: ["vitamin c", "ascorbic acid"],
+    vitamin_a: ["vitamin a", "retinol", "beta-carotene"],
+    vitamin_e: ["vitamin e", "alpha-tocopherol"],
     zinc: ["zinc"],
     iodium: ["iodine", "iodium"],
     water: ["water", "moisture"],
-    iron: ["iron"],
+    iron: ["iron", "ferrous", "ferric"],
+    magnesium: ["magnesium"],
+    selenium: ["selenium"],
   };
 
   if (!Array.isArray(ingredients) || ingredients.length === 0) {
