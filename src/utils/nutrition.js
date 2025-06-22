@@ -1,5 +1,6 @@
 const axios = require("axios");
 const FoodNutrients = require("../models/FoodNutrient");
+const stringSimilarity = require("string-similarity");
 
 const analyzeNutrition = async (ingredients = []) => {
   const nutrientMap = {
@@ -31,17 +32,43 @@ const analyzeNutrition = async (ingredients = []) => {
   }
 
   const prompt1 = `
-    You are a nutrition assistant. Given a list of food ingredients in Indonesian and natural language input, return a JSON array with the following fields:
-    - name_en: corrected English name of the ingredient (match USDA standard)
-    - name_id: corrected Indonesian name of the ingredient
-    - quantity: numeric amount
-    - unit: "g" or "ml" (converted from input like sdm, piring, gelas)
+You are a professional nutrition data assistant. You will receive a list of food ingredients written in Indonesian and natural language.
 
-    Input:
-    ${ingredients.map((i) => `- ${i}`).join("\n")}
+Your task is to convert them into a structured JSON array with corrected and standardized fields. Focus on finding the most specific USDA-compatible English food name (as used in the USDA FoodData Central database).
 
-    Output ONLY valid JSON array.
-  `;
+Return each item with the following fields:
+- name_en: specific, corrected English name of the ingredient (must be suitable for searching in USDA database — avoid generic terms).
+- name_id: corrected Indonesian name of the ingredient.
+- quantity: numeric value only (converted if needed, no unit).
+- unit: either "g" for solid or "ml" for liquid (convert informal units like sdm, sdt, piring, gelas, potong, butir).
+
+Examples of good name_en values:
+- Use "Spinach, raw" instead of just "spinach"
+- Use "Garlic, raw" instead of "garlic"
+- Use "Oil, vegetable" instead of "cooking oil"
+- Use "Shallots, raw" instead of "shallots"
+
+Only output a valid JSON array like this:
+[
+  {
+    "name_en": "Spinach, raw",
+    "name_id": "bayam",
+    "quantity": 200,
+    "unit": "g"
+  },
+  {
+    "name_en": "Garlic, raw",
+    "name_id": "bawang putih",
+    "quantity": 5,
+    "unit": "g"
+  }
+]
+
+Input:
+${ingredients.map((i) => `- ${i}`).join("\n")}
+
+ONLY output the final JSON. Do not explain or add anything else.
+`;
 
   const stdResp = await axios.post(
     "https://api.openai.com/v1/chat/completions",
@@ -70,69 +97,94 @@ const analyzeNutrition = async (ingredients = []) => {
   for (const item of parsed) {
     const { name_en, name_id, quantity, unit } = item;
 
-    // Cari dari koleksi lokal (TKPI)
-    const localDocs = await FoodNutrients.aggregate([
-      {
-        $match: {
-          Food: { $regex: name_id, $options: "i" },
-        },
-      },
-      {
-        $addFields: {
-          matchScore: {
-            $subtract: [100, { $strLenCP: name_id }],
-          },
-        },
-      },
-      { $sort: { matchScore: -1 } },
-      { $limit: 5 },
-    ]);
+    const localDocs = await FoodNutrients.aggregate([{ $match: { Food: { $regex: name_id, $options: "i" } } }, { $addFields: { matchScore: { $subtract: [100, { $strLenCP: name_id }] } } }, { $sort: { matchScore: -1 } }, { $limit: 5 }]);
 
-    const tkpiNutrients = localDocs.map((d) => ({
-      nutrient: d.Nutrient,
-      value: +(d.Amount * (quantity / 100)).toFixed(2),
-      unit: d.Unit,
-      source: "TKPI",
-    }));
+    const isMainNutrient = (nutrientName) => {
+      const lower = nutrientName.toLowerCase();
+      return Object.values(nutrientMap).some((aliases) => aliases.some((alias) => lower.includes(alias)));
+    };
 
-    // Periksa apakah semua nutrisi utama sudah tersedia
-    const foundKeys = new Set();
-    for (const nutrient of tkpiNutrients) {
-      const name = nutrient.nutrient.toLowerCase();
-      for (const key in nutrientMap) {
-        if (nutrientMap[key].some((alias) => name.includes(alias))) {
-          foundKeys.add(key);
+    const deduplicate = (nutrients) => {
+      const seen = new Set();
+      const unique = [];
+
+      for (const n of nutrients) {
+        const key = Object.entries(nutrientMap).find(([mainKey, aliases]) => aliases.some((alias) => n.nutrient.toLowerCase().includes(alias)))?.[0];
+
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          unique.push({ ...n, mappedKey: key });
         }
       }
-    }
+
+      return unique;
+    };
+
+    const tkpiNutrients = deduplicate(
+      localDocs
+        .map((d) => ({
+          nutrient: d.Nutrient,
+          value: +(d.Amount * (quantity / 100)).toFixed(2),
+          unit: d.Unit,
+          source: "TKPI",
+        }))
+        .filter((n) => isMainNutrient(n.nutrient))
+    );
 
     let usdaNutrients = [];
-    const missingKeys = Object.keys(nutrientMap).filter((k) => !foundKeys.has(k));
+    let usda_name = "";
 
-    // Jika masih ada nutrisi utama yang belum tersedia, panggil USDA
-    if (missingKeys.length > 0) {
+    if (tkpiNutrients.length === 0) {
       try {
-        const usdaResp = await axios.get(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name_en)}&pageSize=1&api_key=${process.env.USDA_KEY}`);
+        const usdaResp = await axios.get(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name_en)}&pageSize=50&api_key=${process.env.USDA_KEY}`);
 
-        const foodItem = usdaResp.data.foods?.[0];
-        if (foodItem) {
-          usdaNutrients = foodItem.foodNutrients.map((n) => ({
-            nutrient: n.nutrientName,
-            value: +(n.value * (quantity / 100)).toFixed(2),
-            unit: n.unitName,
-            source: "USDA",
-          }));
+        const foods = usdaResp.data.foods || [];
+
+        const normalize = (str) =>
+          str
+            .toLowerCase()
+            .replace(/[^\w\s]/gi, "")
+            .trim();
+
+        const bestMatch = foods
+          .map((item) => {
+            const score = stringSimilarity.compareTwoStrings(normalize(name_en), normalize(item.description));
+            return { ...item, similarity: score };
+          })
+          .sort((a, b) => b.similarity - a.similarity)[0];
+
+        if (!bestMatch || bestMatch.similarity < 0.8) {
+          console.log(`❌ USDA match untuk "${name_en}" diabaikan karena similarity ${bestMatch?.similarity ?? 0}`);
+        } else {
+          usdaNutrients = deduplicate(
+            bestMatch.foodNutrients
+              .map((n) => ({
+                nutrient: n.nutrientName,
+                value: +(n.value * (quantity / 100)).toFixed(2),
+                unit: n.unitName,
+                source: "USDA",
+              }))
+              .filter((n) => isMainNutrient(n.nutrient))
+          );
+
+          usda_name = bestMatch.description;
         }
       } catch (err) {
         console.warn("USDA error:", err.message);
       }
     }
 
-    const combinedNutrients = [...tkpiNutrients, ...usdaNutrients];
-    results.push({ name: name_id, name_en, quantity, unit, nutrients: combinedNutrients });
+    const combinedNutrients = tkpiNutrients.length > 0 ? tkpiNutrients : usdaNutrients;
+
+    results.push({
+      name: name_id,
+      name_en: usda_name,
+      quantity,
+      unit,
+      nutrients: combinedNutrients,
+    });
   }
 
-  // Gabungkan nutrisi untuk semua bahan
   const nutritionInfo = {};
   for (const key in nutrientMap) {
     let total = 0;
@@ -140,8 +192,7 @@ const analyzeNutrition = async (ingredients = []) => {
 
     for (const ingredient of results) {
       for (const nutrient of ingredient.nutrients) {
-        const name = nutrient.nutrient.toLowerCase();
-        if (nutrientMap[key].some((alias) => name.includes(alias))) {
+        if (nutrient.mappedKey === key) {
           total += Number(nutrient.value) || 0;
           found = true;
         }
