@@ -8,6 +8,7 @@ const NutritionInfoSchema = new mongoose.Schema(
     fat: mongoose.Schema.Types.Mixed,
     fiber: mongoose.Schema.Types.Mixed,
     sugar: mongoose.Schema.Types.Mixed,
+    added_sugar: mongoose.Schema.Types.Mixed,
     sodium: mongoose.Schema.Types.Mixed,
     folic_acid: mongoose.Schema.Types.Mixed,
     kalsium: mongoose.Schema.Types.Mixed,
