@@ -32,42 +32,40 @@ const analyzeNutrition = async (ingredients = []) => {
   }
 
   const prompt1 = `
-You are a professional nutrition data assistant. You will receive a list of food ingredients written in Indonesian and natural language.
+You are a professional nutrition data assistant.
 
-Your task is to convert them into a structured JSON array with corrected and standardized fields. Focus on finding the most specific USDA-compatible English food name (as used in the USDA FoodData Central database).
+You will receive a list of food ingredients in Indonesian. Your job is to convert them into a structured JSON array using the most accurate **USDA-compatible English food names** — as they appear in the USDA FoodData Central database.
 
-Return each item with the following fields:
-- name_en: specific, corrected English name of the ingredient (must be suitable for searching in USDA database — avoid generic terms).
-- name_id: corrected Indonesian name of the ingredient.
-- quantity: numeric value only (converted if needed, no unit).
-- unit: either "g" for solid or "ml" for liquid (convert informal units like sdm, sdt, piring, gelas, potong, butir).
+Your task is:
+- Convert the Indonesian ingredient name to a corrected Indonesian name (\`name_id\`).
+- Convert the name to the **exact matching USDA food description** (\`name_en\`). It must be:
+  - As specific as possible (avoid general terms like "chicken breast, raw").
+  - Including qualifiers like "meat only", "with skin", "boiled", "raw", etc.
+  - Use phrasing consistent with USDA descriptions like:
+    - "Chicken, broilers or fryers, breast, meat only, raw"
+    - "Spinach, raw"
+    - "Rice, white, long-grain, cooked"
+    - "Egg, whole, cooked, fried"
 
-Examples of good name_en values:
-- Use "Spinach, raw" instead of just "spinach"
-- Use "Garlic, raw" instead of "garlic"
-- Use "Oil, vegetable" instead of "cooking oil"
-- Use "Shallots, raw" instead of "shallots"
+Also, normalize quantity and unit:
+- \`quantity\`: numeric only (convert informal units like sdm, butir, potong, piring, gelas, etc. into grams or ml)
+- \`unit\`: only "g" (grams) for solids or "ml" (milliliters) for liquids
 
-Only output a valid JSON array like this:
+Output format:
+
 [
   {
-    "name_en": "Spinach, raw",
-    "name_id": "bayam",
+    "name_en": "USDA-style English name here",
+    "name_id": "nama Indonesia sudah diperbaiki",
     "quantity": 200,
-    "unit": "g"
-  },
-  {
-    "name_en": "Garlic, raw",
-    "name_id": "bawang putih",
-    "quantity": 5,
     "unit": "g"
   }
 ]
 
+Only output valid JSON, do not add comments, explanation, or markdown.
+
 Input:
 ${ingredients.map((i) => `- ${i}`).join("\n")}
-
-ONLY output the final JSON. Do not explain or add anything else.
 `;
 
   const stdResp = await axios.post(
@@ -154,7 +152,7 @@ ONLY output the final JSON. Do not explain or add anything else.
           .sort((a, b) => b.similarity - a.similarity)[0];
 
         if (!bestMatch || bestMatch.similarity < 0.8) {
-          console.log(`❌ USDA match untuk "${name_en}" diabaikan karena similarity ${bestMatch?.similarity ?? 0}`);
+          console.log(`❌ USDA match untuk "${name_en}" dengan ${bestMatch.description} diabaikan karena similarity ${bestMatch?.similarity ?? 0}`);
         } else {
           usdaNutrients = deduplicate(
             bestMatch.foodNutrients
