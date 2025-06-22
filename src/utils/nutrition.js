@@ -38,15 +38,12 @@ const analyzeNutrition = async (ingredients = []) => {
   };
 
   const normalizeUnitAndConvert = (n) => {
-    let unit = n.unit.toLowerCase();
-    unit = unit.replace("ug", "µg").replace("iu", "iu").replace("kj", "kcal");
-
+    let unit = n.unit.toLowerCase().replace("ug", "µg").replace("iu", "iu").replace("kj", "kcal");
     let value = Number(n.value) || 0;
     if (n.unit.toLowerCase() === "kj") {
       value = +(value / 4.184).toFixed(2);
       unit = "kcal";
     }
-
     return { ...n, value, unit };
   };
 
@@ -55,7 +52,6 @@ const analyzeNutrition = async (ingredients = []) => {
     for (const n of nutrients) {
       const key = Object.entries(nutrientMap).find(([mainKey, aliases]) => aliases.some((alias) => n.nutrient.toLowerCase().includes(alias)))?.[0];
       if (!key) continue;
-
       const cleaned = normalizeUnitAndConvert(n);
       if (!result[key]) {
         result[key] = { ...cleaned, mappedKey: key };
@@ -82,24 +78,20 @@ Anda adalah spesialis USDA FoodData Central yang ketat. Tugas Anda adalah mengko
    - Gunakan istilah Indonesia baku (contoh: "bawang putih" bukan "bawmer")
 
 3. Konversi satuan:
-   - Gunakan tabel konversi ini:
-        * sdm (tbsp): 
-            - Madu: 21g
-            - Minyak: 14ml
-            - Lainnya: 15g/ml
-        * sdt (tsp): 5g/ml
-        * butir/buah: 
-            - Telur: 50g
-            - Daging: 100g
-            - Tahu: 80g
-        * gelas (cup):
-            - Cairan: 240ml
-            - Nasi: 180g
-            - Tepung: 120g
+   - Jika satuan tidak dalam gram (g) atau mililiter (ml), konversikan berdasarkan konteks bahan makanan.
+   - Perkirakan bobot atau volume yang paling masuk akal berdasarkan jenis bahan dan satuannya.
+   - Gunakan taksiran umum seperti:
+     * 1 sdm (sendok makan) ≈ 15g, kecuali bahan lebih padat atau cair (misalnya: madu, minyak, tepung)
+     * 1 sdt (sendok teh) ≈ 5g
+     * 1 butir/buah ≈ berat khas bahan tersebut (contoh: telur ≈ 50g, tahu ≈ 80g)
+     * 1 gelas/cup ≈ 240ml (untuk cairan), atau kira-kira 120g (untuk bahan padat)
+
+   - Jika ragu, gunakan asumsi terbaik berdasarkan logika dan pengetahuan bahan makanan.
 
 4. Format output:
    - HANYA output JSON array valid
    - Unit HANYA "g" atau "ml"
+   - Tambahkan properti: \`is_added_sugar\`: true jika bahan merupakan gula tambahan (seperti madu, gula pasir, sirup), false jika bukan
 
 **TANGANI KASUS KHUSUS:**
 - Untuk bahan lokal (tempe): 
@@ -138,7 +130,7 @@ ${ingredients.map((i) => `- ${i}`).join("\n")}
   const results = [];
 
   for (const item of parsed) {
-    const { name_en, name_id, quantity, unit } = item;
+    const { name_en, name_id, quantity, unit, is_added_sugar } = item;
 
     const localDocs = await FoodNutrients.aggregate([{ $match: { Food: { $regex: name_id, $options: "i" } } }, { $addFields: { matchScore: { $subtract: [100, { $strLenCP: name_id }] } } }, { $sort: { matchScore: -1 } }, { $limit: 5 }]);
 
@@ -160,7 +152,6 @@ ${ingredients.map((i) => `- ${i}`).join("\n")}
       try {
         const usdaResp = await axios.get(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(name_en)}&pageSize=50&api_key=${process.env.USDA_KEY}`);
         const foods = usdaResp.data.foods || [];
-
         const normalize = (str) =>
           str
             .toLowerCase()
@@ -193,12 +184,25 @@ ${ingredients.map((i) => `- ${i}`).join("\n")}
       }
     }
 
+    const nutrients = tkpiNutrients.length > 0 ? tkpiNutrients : usdaNutrients;
+
+    // Tambahkan added_sugar jika bahan ini gula tambahan
+    if (is_added_sugar) {
+      const sugarEntry = nutrients.find((n) => n.mappedKey === "sugar");
+      if (sugarEntry) {
+        nutrients.push({
+          ...sugarEntry,
+          mappedKey: "added_sugar",
+        });
+      }
+    }
+
     results.push({
       name: name_id,
       name_en: usda_name || name_en,
       quantity,
       unit,
-      nutrients: tkpiNutrients.length > 0 ? tkpiNutrients : usdaNutrients,
+      nutrients,
     });
   }
 
