@@ -23,6 +23,7 @@ const NutritionInfoSchema = new mongoose.Schema(
     vitamin_e: mongoose.Schema.Types.Mixed,
     magnesium: mongoose.Schema.Types.Mixed,
     selenium: mongoose.Schema.Types.Mixed,
+    iron: mongoose.Schema.Types.Mixed,
     date: String,
   },
   { _id: false }
