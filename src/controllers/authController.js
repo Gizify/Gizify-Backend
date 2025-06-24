@@ -80,7 +80,7 @@ const completeUserProfile = async (req, res) => {
         birthdate,
         height,
         weight,
-        birthdate,
+        birthDate: birthdate,
         activity_level: activity,
         gestational_age,
         trimester: newTrimester,
