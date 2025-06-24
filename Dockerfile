@@ -1,6 +1,6 @@
 FROM node:lts-slim
 
-WORKDIR /src/app
+WORKDIR /src
 
 COPY package*.json ./
 
