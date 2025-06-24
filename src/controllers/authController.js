@@ -77,7 +77,6 @@ const completeUserProfile = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
-        birthdate,
         height,
         weight,
         birthDate: birthdate,
