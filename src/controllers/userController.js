@@ -333,7 +333,7 @@ const generateRecipe = async (req, res) => {
 
     const recipeData = {
       title: parsedResult.title || "Resep AI",
-      ingredients: parsedResult.bahan,
+      ingredients: nutritionData.ingredients,
       steps: parsedResult.langkah,
       nutrition_info: nutritionInfo,
       Ai: true,
