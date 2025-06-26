@@ -6,18 +6,21 @@ const { calculateDailyNutritionTarget } = require("../helper/authHelper");
 
 dotenv.config();
 
-// Registrasi Pengguna
+// 📌 Registrasi Pengguna Baru
 const registerUser = async (req, res) => {
   const { email, password, name } = req.body;
 
   try {
+    // Cek apakah email sudah terdaftar
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "Email sudah terdaftar!" });
     }
 
+    // Hash password sebelum disimpan
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Buat dan simpan user baru
     const newUser = new User({
       name,
       email,
@@ -31,13 +34,18 @@ const registerUser = async (req, res) => {
       email,
     };
 
-    // Atur token expire 7 hari
+    // Generate JWT token berlaku selama 7 hari
     const expiresInSeconds = 7 * 24 * 60 * 60;
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
+    const token = jwt.sign(
+      { userId: newUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: expiresInSeconds }
+    );
 
-    // Hitung expiredAt dalam milisecond
+    // Hitung waktu kedaluwarsa token dalam milidetik
     const expiredAt = Date.now() + expiresInSeconds * 1000;
 
+    // Kirim response sukses
     res.status(201).json({ message: "Registrasi berhasil!", token, user, expiredAt });
   } catch (error) {
     console.error(error);
@@ -45,6 +53,7 @@ const registerUser = async (req, res) => {
   }
 };
 
+// 📌 Fungsi bantu: Hitung trimester kehamilan berdasarkan usia kehamilan
 const calculateTrimester = ({ months, days }) => {
   const totalDays = months * 30 + days;
   const totalWeeks = totalDays / 7;
@@ -54,17 +63,28 @@ const calculateTrimester = ({ months, days }) => {
   return 3;
 };
 
-// lengkapi data pengguna untuk ibu hamil
+// 📌 Lengkapi Profil Pengguna (Ibu Hamil)
 const completeUserProfile = async (req, res) => {
   const { userId } = req;
-  const { height, weight, activity, birthdate, gestational_age, photoOption, medical_history = [] } = req.body;
+  const {
+    height,
+    weight,
+    activity,
+    birthdate,
+    gestational_age,
+    photoOption,
+    medical_history = [],
+  } = req.body;
 
   try {
+    // Ambil data pengguna saat ini
     const user = await User.findById(userId);
     const newTrimester = calculateTrimester(gestational_age);
 
+    // Cek apakah trimester berubah
     const trimesterChanged = user && user.trimester && user.trimester !== newTrimester;
 
+    // Hitung target nutrisi harian berdasarkan data terbaru
     const nutritionTarget = calculateDailyNutritionTarget({
       weight,
       height,
@@ -74,6 +94,7 @@ const completeUserProfile = async (req, res) => {
       medical_history,
     });
 
+    // Update data pengguna di database
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
@@ -90,6 +111,7 @@ const completeUserProfile = async (req, res) => {
       { new: true }
     );
 
+    // Buat pesan jika trimester berubah
     let message = "Profil berhasil dilengkapi!";
     if (trimesterChanged) {
       message += " Trimester Anda telah berubah. Data nutrisi telah diperbarui.";
@@ -102,11 +124,12 @@ const completeUserProfile = async (req, res) => {
   }
 };
 
-// Login Pengguna (Ibu Hamil)
+// 📌 Login Pengguna (Ibu Hamil)
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Cek apakah pengguna ada di database
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "Pengguna tidak ditemukan." });
@@ -118,6 +141,7 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Password salah." });
     }
 
+    // Ambil data penting pengguna
     const userData = {
       _id: user._id,
       name: user.name,
@@ -133,9 +157,15 @@ const loginUser = async (req, res) => {
       meal_logs: user.meal_logs,
     };
 
+    // Generate token akses
     const expiresInSeconds = 7 * 24 * 60 * 60;
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: expiresInSeconds }
+    );
 
+    // Kirim response sukses login
     res.json({
       message: "Login berhasil!",
       token,
@@ -147,13 +177,18 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Update Data Pengguna
+// 📌 Update Data Umum Pengguna
 const updateUserData = async (req, res) => {
   const { userId } = req.params;
   const { height, weight, gender, activity, goal, birthdate, photoOption } = req.body;
 
   try {
-    const updatedUser = await User.findByIdAndUpdate(userId, { height, weight, gender, activity, goal, birthdate, photoOption }, { new: true });
+    // Update data pengguna berdasarkan ID
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { height, weight, gender, activity, goal, birthdate, photoOption },
+      { new: true }
+    );
 
     if (!updatedUser) {
       return res.status(404).json({ message: "Pengguna tidak ditemukan." });
@@ -166,4 +201,10 @@ const updateUserData = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, updateUserData, completeUserProfile };
+// 📦 Export controller functions
+module.exports = {
+  registerUser,
+  loginUser,
+  updateUserData,
+  completeUserProfile,
+};
