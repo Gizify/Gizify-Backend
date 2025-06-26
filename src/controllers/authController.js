@@ -36,11 +36,7 @@ const registerUser = async (req, res) => {
 
     // Generate JWT token berlaku selama 7 hari
     const expiresInSeconds = 7 * 24 * 60 * 60;
-    const token = jwt.sign(
-      { userId: newUser._id },
-      process.env.JWT_SECRET,
-      { expiresIn: expiresInSeconds }
-    );
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
 
     // Hitung waktu kedaluwarsa token dalam milidetik
     const expiredAt = Date.now() + expiresInSeconds * 1000;
@@ -66,15 +62,7 @@ const calculateTrimester = ({ months, days }) => {
 // 📌 Lengkapi Profil Pengguna (Ibu Hamil)
 const completeUserProfile = async (req, res) => {
   const { userId } = req;
-  const {
-    height,
-    weight,
-    activity,
-    birthdate,
-    gestational_age,
-    photoOption,
-    medical_history = [],
-  } = req.body;
+  const { height, weight, activity, birthdate, gestational_age, photoOption, medical_history = [] } = req.body;
 
   try {
     // Ambil data pengguna saat ini
@@ -100,7 +88,7 @@ const completeUserProfile = async (req, res) => {
       {
         height,
         weight,
-        birthDate: birthdate,
+        birthdate,
         activity_level: activity,
         gestational_age,
         trimester: newTrimester,
@@ -159,11 +147,7 @@ const loginUser = async (req, res) => {
 
     // Generate token akses
     const expiresInSeconds = 7 * 24 * 60 * 60;
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: expiresInSeconds }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
 
     // Kirim response sukses login
     res.json({
@@ -184,11 +168,7 @@ const updateUserData = async (req, res) => {
 
   try {
     // Update data pengguna berdasarkan ID
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { height, weight, gender, activity, goal, birthdate, photoOption },
-      { new: true }
-    );
+    const updatedUser = await User.findByIdAndUpdate(userId, { height, weight, gender, activity, goal, birthdate, photoOption }, { new: true });
 
     if (!updatedUser) {
       return res.status(404).json({ message: "Pengguna tidak ditemukan." });
