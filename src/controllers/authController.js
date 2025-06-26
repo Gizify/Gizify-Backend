@@ -122,7 +122,7 @@ const loginUser = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
-      birthdate: user.birthdate,
+      birthdate: user.birthDate,
       height: user.height,
       weight: user.weight,
       activity_level: user.activity_level,
