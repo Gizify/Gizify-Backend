@@ -8,6 +8,7 @@ const FoodBarcodeSchema = new mongoose.Schema({
   nutrition_info: NutritionInfoSchema,
   ingredients_list: [String],
   image: String,
+  source: String,
   updated_at: { type: Date, default: Date.now },
 });
 

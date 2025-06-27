@@ -53,17 +53,23 @@ const scanProduct = async (req, res) => {
         protein: calculateNutrition(nutriments.proteins_100g, nutriments.proteins, nutriments.proteins_unit),
         fat: calculateNutrition(nutriments.fat_100g, nutriments.fat, nutriments.fat_unit),
         sugar: calculateNutrition(nutriments.sugars_100g, nutriments.sugars, nutriments.sugars_unit),
-        sodium: calculateNutrition(nutriments.sodium_100g, nutriments.sodium, nutriments.sodium_unit),
+        added_sugar: calculateNutrition(nutriments["added-sugars_100g"], nutriments["added-sugars"], nutriments["added-sugars_unit"]),
         fiber: calculateNutrition(nutriments.fiber_100g, nutriments.fiber, nutriments.fiber_unit),
+        sodium: calculateNutrition(nutriments.sodium_100g, nutriments.sodium, nutriments.sodium_unit),
         folic_acid: calculateNutrition(nutriments["folic-acid_100g"], nutriments["folic-acid"], nutriments["folic-acid_unit"]),
         kalsium: calculateNutrition(nutriments["calcium_100g"], nutriments["calcium"], nutriments["calcium_unit"]),
         vitamin_d: calculateNutrition(nutriments["vitamin-d_100g"], nutriments["vitamin-d"], nutriments["vitamin-d_unit"]),
         vitamin_b12: calculateNutrition(nutriments["vitamin-b12_100g"], nutriments["vitamin-b12"], nutriments["vitamin-b12_unit"]),
+        vitamin_b6: calculateNutrition(nutriments["vitamin-b6_100g"], nutriments["vitamin-b6"], nutriments["vitamin-b6_unit"]),
         vitamin_c: calculateNutrition(nutriments["vitamin-c_100g"], nutriments["vitamin-c"], nutriments["vitamin-c_unit"]),
+        vitamin_a: calculateNutrition(nutriments["vitamin-a_100g"], nutriments["vitamin-a"], nutriments["vitamin-a_unit"]),
+        vitamin_e: calculateNutrition(nutriments["vitamin-e_100g"], nutriments["vitamin-e"], nutriments["vitamin-e_unit"]),
         zinc: calculateNutrition(nutriments["zinc_100g"], nutriments["zinc"], nutriments["zinc_unit"]),
         iodium: calculateNutrition(nutriments["iodine_100g"], nutriments["iodine"], nutriments["iodine_unit"]),
         water: calculateNutrition(nutriments["water_100g"], nutriments["water"], nutriments["water_unit"]),
         iron: calculateNutrition(nutriments["iron_100g"], nutriments["iron"], nutriments["iron_unit"]),
+        magnesium: calculateNutrition(nutriments["magnesium_100g"], nutriments["magnesium"], nutriments["magnesium_unit"]),
+        selenium: calculateNutrition(nutriments["selenium_100g"], nutriments["selenium"], nutriments["selenium_unit"]),
       };
 
       const newFoodCache = new FoodBarcode({
@@ -75,6 +81,7 @@ const scanProduct = async (req, res) => {
         package_size: packageSize,
         serving_size: servingSize,
         image: product.image_url,
+        source: "Open Food Facts",
       });
 
       try {
@@ -99,6 +106,7 @@ const scanProduct = async (req, res) => {
         image: cachedProduct?.image_url || product.image_url,
         barcode: cachedProduct?.barcode || product.code,
         cache: !!cachedProduct,
+        source: cachedProduct?.source || "Open Food Facts",
       });
     } else {
       res.status(404).json({ error: "Product not found in Open Food Facts database" });
