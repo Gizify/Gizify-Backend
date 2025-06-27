@@ -3,7 +3,7 @@ const NutritionInfoSchema = require("./NutritionInfoSchema");
 
 const MealSchema = new mongoose.Schema(
   {
-    source: { type: String, enum: ["recipe", "barcode", "manual"] },
+    source: { type: String, enum: ["recipe", "barcode", "upload"] },
     source_id: { type: String },
     name: String,
     portion_size: Number,

@@ -18,8 +18,8 @@ const addConsumption = async (req, res) => {
     const { source, source_id, portion_size = 1, userTimeZone = "Asia/Jakarta" } = req.body;
 
     // Validasi input
-    if (!["barcode", "recipe"].includes(source)) {
-      return res.status(400).json({ message: "Source harus berupa 'barcode' atau 'recipe'" });
+    if (!["barcode", "recipe", "upload"].includes(source)) {
+      return res.status(400).json({ message: "Source harus berupa 'barcode','recipe', atau 'upload' " });
     }
 
     let foodName, adjustedNutrition;
@@ -41,6 +41,14 @@ const addConsumption = async (req, res) => {
 
       foodName = recipe.title;
       adjustedNutrition = calculateAdjustedNutrition(recipe.nutrition_info, portion_size);
+    } else if (source === "upload") {
+      const userRecipe = await UserRecipe.findById(source_id);
+      if (!userRecipe) {
+        return res.status(404).json({ message: "Resep upload tidak ditemukan." });
+      }
+
+      foodName = userRecipe.title;
+      adjustedNutrition = calculateAdjustedNutrition(userRecipe.nutrition_info, portion_size);
     }
 
     // Update user data
