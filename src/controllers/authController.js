@@ -49,25 +49,39 @@ const registerUser = async (req, res) => {
   }
 };
 
-// 📌 Fungsi bantu: Hitung trimester kehamilan berdasarkan usia kehamilan
-const calculateTrimester = ({ months, days }) => {
-  const totalDays = months * 30 + days;
+// 📌 Fungsi bantu: Hitung trimester kehamilan berdasarkan haid
+const calculateTrimesterFromLMP = (lastMenstrualPeriod) => {
+  if (!lastMenstrualPeriod) return null;
+
+  const lmpDate = new Date(lastMenstrualPeriod);
+  const now = new Date();
+
+  const diffTime = now.getTime() - lmpDate.getTime();
+  const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   const totalWeeks = totalDays / 7;
 
-  if (totalWeeks <= 13) return 1;
-  if (totalWeeks <= 27) return 2;
-  return 3;
+  let trimester = 1;
+  if (totalWeeks > 13) trimester = 2;
+  if (totalWeeks > 27) trimester = 3;
+
+  return {
+    gestational_age: {
+      months: Math.floor(totalDays / 30),
+      days: totalDays % 30,
+    },
+    trimester,
+  };
 };
 
 // 📌 Lengkapi Profil Pengguna (Ibu Hamil)
 const completeUserProfile = async (req, res) => {
   const { userId } = req;
-  const { height, weight, activity, birthdate, gestational_age, photoOption, medical_history = [] } = req.body;
+  const { height, weight, activity, birthdate, last_menstrual_period, photoOption, medical_history = [] } = req.body;
 
   try {
     // Ambil data pengguna saat ini
     const user = await User.findById(userId);
-    const newTrimester = calculateTrimester(gestational_age);
+    const { gestational_age, trimester: newTrimester } = calculateTrimesterFromLMP(last_menstrual_period);
 
     // Cek apakah trimester berubah
     const trimesterChanged = user && user.trimester && user.trimester !== newTrimester;
@@ -88,6 +102,7 @@ const completeUserProfile = async (req, res) => {
       {
         height,
         weight,
+        last_menstrual_period,
         birthdate,
         activity_level: activity,
         gestational_age,

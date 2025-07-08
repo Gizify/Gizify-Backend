@@ -7,6 +7,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   passwordHash: String,
   birthdate: String,
+  last_menstrual_period: String,
   gestational_age: {
     months: { type: Number },
     days: { type: Number },
