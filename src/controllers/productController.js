@@ -35,41 +35,48 @@ const scanProduct = async (req, res) => {
       const servingSize = product.serving_quantity ? parseFloat(product.serving_quantity) : null;
 
       const calculateNutrition = (per100g, value, unit) => {
-        if (value && packageSize) {
-          if (unit === "serving" && servingSize) {
-            return (value / servingSize) * packageSize;
-          }
-          if (per100g) {
-            return (value / 100) * packageSize;
-          }
-          return value;
+        if (!value) return 0;
+
+        // Jika satuannya bukan per 100g atau per serving, asumsikan nilainya sudah benar
+        if (unit && unit !== "g" && unit !== "mg" && unit !== "µg" && unit !== "kcal") {
+          return Math.round(value * 100) / 100;
         }
-        return value || 0;
+
+        // Konversi per 100g → total berdasarkan packageSize
+        if (per100g && packageSize) {
+          return Math.round((value / 100) * packageSize * 100) / 100;
+        }
+
+        return Math.round(value * 100) / 100;
+      };
+
+      const getNutrientValue = (key) => {
+        return nutriments[`${key}_serving`] ?? nutriments[key] ?? 0;
       };
 
       const nutrition_info = {
-        calories: calculateNutrition(nutriments["energy-kcal_100g"], nutriments["energy-kcal"], nutriments["energy-kcal_unit"]),
-        carbs: calculateNutrition(nutriments.carbohydrates_100g, nutriments.carbohydrates, nutriments.carbohydrates_unit),
-        protein: calculateNutrition(nutriments.proteins_100g, nutriments.proteins, nutriments.proteins_unit),
-        fat: calculateNutrition(nutriments.fat_100g, nutriments.fat, nutriments.fat_unit),
-        sugar: calculateNutrition(nutriments.sugars_100g, nutriments.sugars, nutriments.sugars_unit),
-        added_sugar: calculateNutrition(nutriments["added-sugars_100g"], nutriments["added-sugars"], nutriments["added-sugars_unit"]),
-        fiber: calculateNutrition(nutriments.fiber_100g, nutriments.fiber, nutriments.fiber_unit),
-        sodium: calculateNutrition(nutriments.sodium_100g, nutriments.sodium, nutriments.sodium_unit),
-        folic_acid: calculateNutrition(nutriments["folic-acid_100g"], nutriments["folic-acid"], nutriments["folic-acid_unit"]),
-        kalsium: calculateNutrition(nutriments["calcium_100g"], nutriments["calcium"], nutriments["calcium_unit"]),
-        vitamin_d: calculateNutrition(nutriments["vitamin-d_100g"], nutriments["vitamin-d"], nutriments["vitamin-d_unit"]),
-        vitamin_b12: calculateNutrition(nutriments["vitamin-b12_100g"], nutriments["vitamin-b12"], nutriments["vitamin-b12_unit"]),
-        vitamin_b6: calculateNutrition(nutriments["vitamin-b6_100g"], nutriments["vitamin-b6"], nutriments["vitamin-b6_unit"]),
-        vitamin_c: calculateNutrition(nutriments["vitamin-c_100g"], nutriments["vitamin-c"], nutriments["vitamin-c_unit"]),
-        vitamin_a: calculateNutrition(nutriments["vitamin-a_100g"], nutriments["vitamin-a"], nutriments["vitamin-a_unit"]),
-        vitamin_e: calculateNutrition(nutriments["vitamin-e_100g"], nutriments["vitamin-e"], nutriments["vitamin-e_unit"]),
-        zinc: calculateNutrition(nutriments["zinc_100g"], nutriments["zinc"], nutriments["zinc_unit"]),
-        iodium: calculateNutrition(nutriments["iodine_100g"], nutriments["iodine"], nutriments["iodine_unit"]),
-        water: calculateNutrition(nutriments["water_100g"], nutriments["water"], nutriments["water_unit"]),
-        iron: calculateNutrition(nutriments["iron_100g"], nutriments["iron"], nutriments["iron_unit"]),
-        magnesium: calculateNutrition(nutriments["magnesium_100g"], nutriments["magnesium"], nutriments["magnesium_unit"]),
-        selenium: calculateNutrition(nutriments["selenium_100g"], nutriments["selenium"], nutriments["selenium_unit"]),
+        calories: Math.round(getNutrientValue("energy-kcal")),
+        carbs: Math.round(getNutrientValue("carbohydrates") * 10) / 10,
+        protein: Math.round(getNutrientValue("proteins") * 10) / 10,
+        fat: Math.round(getNutrientValue("fat") * 10) / 10,
+        sugar: Math.round(getNutrientValue("sugars") * 10) / 10,
+        added_sugar: Math.round(getNutrientValue("added-sugars") * 10) / 10,
+        fiber: Math.round(getNutrientValue("fiber") * 10) / 10,
+        sodium: Math.round(getNutrientValue("sodium") * 10) / 10,
+        folic_acid: Math.round(getNutrientValue("folic-acid") * 10) / 10,
+        kalsium: Math.round(getNutrientValue("calcium") * 10) / 10,
+        vitamin_d: Math.round(getNutrientValue("vitamin-d") * 10) / 10,
+        vitamin_b12: Math.round(getNutrientValue("vitamin-b12") * 10) / 10,
+        vitamin_b6: Math.round(getNutrientValue("vitamin-b6") * 10) / 10,
+        vitamin_c: Math.round(getNutrientValue("vitamin-c") * 10) / 10,
+        vitamin_a: Math.round(getNutrientValue("vitamin-a") * 10) / 10,
+        vitamin_e: Math.round(getNutrientValue("vitamin-e") * 10) / 10,
+        zinc: Math.round(getNutrientValue("zinc") * 10) / 10,
+        iodium: Math.round(getNutrientValue("iodine") * 10) / 10,
+        water: Math.round(getNutrientValue("water") * 10) / 10,
+        iron: Math.round(getNutrientValue("iron") * 10) / 10,
+        magnesium: Math.round(getNutrientValue("magnesium") * 10) / 10,
+        selenium: Math.round(getNutrientValue("selenium") * 10) / 10,
       };
 
       const newFoodCache = new FoodBarcode({
