@@ -150,16 +150,19 @@ const loginUser = async (req, res) => {
       name: user.name,
       email: user.email,
       birthdate: user.birthdate,
+      last_menstrual_period: user.last_menstrual_period,
+      gestational_age: user.gestational_age,
+      trimester: user.trimester,
       height: user.height,
       weight: user.weight,
       activity_level: user.activity_level,
-      gestational_age: user.gestational_age,
-      photoOption: user.photoOption,
+      medical_history: user.medical_history,
       daily_nutrition_target: user.daily_nutrition_target,
       nutrition_stats: user.nutrition_stats,
       meal_logs: user.meal_logs,
+      favorites: user.favorites,
+      photoOption: user.photoOption,
     };
-
     // Generate token akses
     const expiresInSeconds = 7 * 24 * 60 * 60;
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: expiresInSeconds });
