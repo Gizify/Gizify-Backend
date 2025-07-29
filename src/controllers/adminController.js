@@ -1,4 +1,5 @@
 const FoodBarcode = require("../models/FoodBarcode");
+const Nutrient = require("../models/FoodNutrient");
 
 // Create a new food barcode entry
 exports.createFoodBarcode = async (req, res) => {
@@ -85,5 +86,119 @@ exports.deleteFoodBarcode = async (req, res) => {
     res.status(200).json({ message: "Food barcode deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting food barcode", error: error.message });
+  }
+};
+
+// Create a new nutrient entry
+exports.createNutrient = async (req, res) => {
+  try {
+    const { fdc_id, Food, Nutrient, Amount, Unit } = req.body;
+
+    const newNutrient = new Nutrient({
+      fdc_id,
+      Food,
+      Nutrient,
+      Amount,
+      Unit,
+    });
+
+    const savedNutrient = await newNutrient.save();
+    res.status(201).json(savedNutrient);
+  } catch (error) {
+    if (error.code === 11000) {
+      // Duplicate key error (for fdc_id)
+      res.status(400).json({ message: "fdc_id already exists" });
+    } else if (error.name === "ValidationError") {
+      res.status(400).json({ message: "Validation error", error: error.message });
+    } else {
+      res.status(500).json({ message: "Error creating nutrient", error: error.message });
+    }
+  }
+};
+
+// Get all nutrient entries with pagination
+exports.getAllNutrients = async (req, res) => {
+  try {
+    // Ambil query params, default: page = 1, limit = 10
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // Hitung jumlah dokumen yang dilewati
+    const skip = (page - 1) * limit;
+
+    // Ambil data + total count untuk pagination
+    const [nutrients, total] = await Promise.all([Nutrient.find().sort({ createdAt: -1 }).skip(skip).limit(limit), Nutrient.countDocuments()]);
+
+    res.status(200).json({
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      data: nutrients,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving nutrients", error: error.message });
+  }
+};
+
+// Get nutrient by fdc_id
+exports.getNutrientByFdcId = async (req, res) => {
+  try {
+    const nutrient = await Nutrient.findOne({ fdc_id: req.params.fdc_id });
+    if (!nutrient) {
+      return res.status(404).json({ message: "Nutrient not found" });
+    }
+    res.status(200).json(nutrient);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving nutrient", error: error.message });
+  }
+};
+
+// Update nutrient by fdc_id
+exports.updateNutrient = async (req, res) => {
+  try {
+    const updatedNutrient = await Nutrient.findOneAndUpdate({ fdc_id: req.params.fdc_id }, req.body, { new: true, runValidators: true });
+
+    if (!updatedNutrient) {
+      return res.status(404).json({ message: "Nutrient not found" });
+    }
+
+    res.status(200).json(updatedNutrient);
+  } catch (error) {
+    if (error.code === 11000) {
+      res.status(400).json({ message: "fdc_id already exists" });
+    } else if (error.name === "ValidationError") {
+      res.status(400).json({ message: "Validation error", error: error.message });
+    } else {
+      res.status(500).json({ message: "Error updating nutrient", error: error.message });
+    }
+  }
+};
+
+// Delete nutrient by fdc_id
+exports.deleteNutrient = async (req, res) => {
+  try {
+    const deletedNutrient = await Nutrient.findOneAndDelete({ fdc_id: req.params.fdc_id });
+    if (!deletedNutrient) {
+      return res.status(404).json({ message: "Nutrient not found" });
+    }
+    res.status(200).json({ message: "Nutrient deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting nutrient", error: error.message });
+  }
+};
+
+// Search nutrients by food name or nutrient name
+exports.searchNutrients = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    const nutrients = await Nutrient.find({
+      $or: [{ Food: { $regex: query, $options: "i" } }, { Nutrient: { $regex: query, $options: "i" } }],
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(nutrients);
+  } catch (error) {
+    res.status(500).json({ message: "Error searching nutrients", error: error.message });
   }
 };
