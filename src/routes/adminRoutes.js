@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const foodBarcodeController = require("../controllers/adminController");
 const nutrientController = require("../controllers/adminController");
+const recipeController = require("../controllers/adminController");
 
 // Create a new food barcode entry
 router.post("/food-barcodes", foodBarcodeController.createFoodBarcode);
@@ -37,5 +38,24 @@ router.delete("/nutrients/:fdc_id", nutrientController.deleteNutrient);
 
 // Search nutrients
 router.get("/nutrients/search", nutrientController.searchNutrients);
+
+// Create a new recipe
+router.post("/recipes", recipeController.createRecipe);
+
+// Get all recipes (with optional search and tag filtering)
+router.get("/recipes", recipeController.getAllRecipes);
+
+// Get recipe by ID
+router.get("/recipes/:id", recipeController.getRecipeById);
+
+// Update recipe by ID
+router.put("/recipes/:id", recipeController.updateRecipe);
+router.patch("/recipes/:id", recipeController.updateRecipe);
+
+// Delete recipe by ID
+router.delete("/recipes/:id", recipeController.deleteRecipe);
+
+// Get recipes by nutrition filter
+router.get("/recipes/nutrition/filter", recipeController.getRecipesByNutrition);
 
 module.exports = router;

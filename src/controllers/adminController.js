@@ -1,5 +1,6 @@
 const FoodBarcode = require("../models/FoodBarcode");
 const Nutrient = require("../models/FoodNutrient");
+const Recipe = require("../models/Recipe");
 
 // Create a new food barcode entry
 exports.createFoodBarcode = async (req, res) => {
@@ -200,5 +201,122 @@ exports.searchNutrients = async (req, res) => {
     res.status(200).json(nutrients);
   } catch (error) {
     res.status(500).json({ message: "Error searching nutrients", error: error.message });
+  }
+};
+
+// Create a new recipe
+exports.createRecipe = async (req, res) => {
+  try {
+    const { title, ingredients, Ai, steps, nutrition_info, tags } = req.body;
+
+    const newRecipe = new Recipe({
+      title,
+      ingredients,
+      Ai: Ai || false,
+      steps,
+      nutrition_info,
+      tags,
+    });
+
+    const savedRecipe = await newRecipe.save();
+    res.status(201).json(savedRecipe);
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      res.status(400).json({ message: "Validation error", error: error.message });
+    } else {
+      res.status(500).json({ message: "Error creating recipe", error: error.message });
+    }
+  }
+};
+
+// Get all recipes
+exports.getAllRecipes = async (req, res) => {
+  try {
+    const { search, tag } = req.query;
+    let query = {};
+
+    if (search) {
+      query.title = { $regex: search, $options: "i" };
+    }
+
+    if (tag) {
+      query.tags = tag;
+    }
+
+    const recipes = await Recipe.find(query).sort({ created_at: -1 });
+    res.status(200).json(recipes);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving recipes", error: error.message });
+  }
+};
+
+// Get recipe by ID
+exports.getRecipeById = async (req, res) => {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+    res.status(200).json(recipe);
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving recipe", error: error.message });
+  }
+};
+
+// Update recipe by ID
+exports.updateRecipe = async (req, res) => {
+  try {
+    const updatedRecipe = await Recipe.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, created_at: Date.now() }, // Update timestamp
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedRecipe) {
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+
+    res.status(200).json(updatedRecipe);
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      res.status(400).json({ message: "Validation error", error: error.message });
+    } else {
+      res.status(500).json({ message: "Error updating recipe", error: error.message });
+    }
+  }
+};
+
+// Delete recipe by ID
+exports.deleteRecipe = async (req, res) => {
+  try {
+    const deletedRecipe = await Recipe.findByIdAndDelete(req.params.id);
+    if (!deletedRecipe) {
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+    res.status(200).json({ message: "Recipe deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting recipe", error: error.message });
+  }
+};
+
+// Get recipes by nutrition filter
+exports.getRecipesByNutrition = async (req, res) => {
+  try {
+    const { nutrient, min, max } = req.query;
+
+    if (!nutrient || !min || !max) {
+      return res.status(400).json({ message: "Missing nutrient, min, or max parameters" });
+    }
+
+    const query = {};
+    query[`nutrition_info.${nutrient}`] = {
+      $gte: parseFloat(min),
+      $lte: parseFloat(max),
+    };
+
+    const recipes = await Recipe.find(query).sort({ created_at: -1 });
+    res.status(200).json(recipes);
+  } catch (error) {
+    res.status(500).json({ message: "Error filtering recipes by nutrition", error: error.message });
   }
 };
