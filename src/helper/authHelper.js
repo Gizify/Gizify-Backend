@@ -1,25 +1,31 @@
 function calculateDailyNutritionTarget({ weight, height, birthdate, activity_level, trimester, medical_history = [] }) {
+  // Calculate age from birthdate
   const age = new Date().getFullYear() - new Date(birthdate).getFullYear();
+
+  // Basal Metabolic Rate (BMR) calculation for women
   let bmr = 10 * weight + 6.25 * height - 5 * age - 161;
 
+  // Get activity multiplier based on user's activity level
   const activityFactorMap = {
     ringan: 1.375,
     sedang: 1.55,
     berat: 1.725,
   };
   const activityFactor = activityFactorMap[activity_level?.toLowerCase()] || 1.2;
+
+  // Calculate daily calorie needs
   let calories = bmr * activityFactor;
 
-  // Protein
+  // Protein needs (base + trimester adjustment)
   let baseProtein = 0.8 * weight;
   let extraProtein = trimester === 1 ? 1 : trimester === 2 ? 10 : 30;
   let protein = baseProtein + extraProtein;
 
-  // Makronutrien
+  // Macronutrient distribution
   let fat = (calories * 0.25) / 9;
   let carbs = (calories * 0.55) / 4;
 
-  // Mikronutrien dasar
+  // Default micronutrient targets (based on pregnancy recommendations)
   let fiber = 30;
   let sugar = 25;
   let sodium = 2300;
@@ -38,26 +44,30 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, activity_lev
   let magnesium = 300;
   let selenium = 60;
 
-  // Penyesuaian penyakit
+  // Medical condition adjustments
   if (medical_history.includes("diabetes")) {
     carbs *= 0.8;
     sugar = 25;
     fiber += 5;
   }
+
   if (medical_history.includes("hipertensi")) {
     sodium = 1500;
   }
+
   if (medical_history.includes("anemia")) {
     iron += 10;
     vitamin_c += 20;
     vitamin_b12 += 0.5;
   }
+
   if (medical_history.includes("obesitas")) {
     calories *= 0.9;
     protein += 5;
     carbs *= 0.9;
   }
 
+  // Return final nutrition targets
   return {
     calories: Math.round(calories),
     protein: Math.round(protein),
