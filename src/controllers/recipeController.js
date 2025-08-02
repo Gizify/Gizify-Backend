@@ -1,7 +1,7 @@
 require("dotenv").config();
 const Recipe = require("../models/Recipe");
 
-// Ambil semua resep dari MongoDB
+// Retrieve all recipes from MongoDB
 const getAllRecipes = async (req, res) => {
   try {
     const recipes = await Recipe.find();
