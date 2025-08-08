@@ -12,7 +12,7 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, trimester, m
   let extraCalories = trimester === 1 ? 180 : trimester === 2 ? 300 : 450;
   let calories = tdee + extraCalories;
 
-  // Protein
+  // Protein needs (base + trimester adjustment)
   let baseProtein = 0.8 * weight;
   let extraProtein = trimester === 1 ? 1 : trimester === 2 ? 10 : 30;
   let protein = baseProtein + extraProtein;
@@ -36,20 +36,23 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, trimester, m
   let magnesium = 350; // update sesuai AKG RI
   let selenium = 65; // update sesuai AKG RI
 
-  // Penyesuaian penyakit
+  // Medical condition adjustments
   if (medical_history.includes("diabetes")) {
     sugar = 25;
     fiber += 5;
     calories *= 0.95; // sedikit kurangi kalori total
   }
+
   if (medical_history.includes("hipertensi")) {
     sodium = 1500;
   }
+
   if (medical_history.includes("anemia")) {
     iron += 10;
     vitamin_c += 20;
     vitamin_b12 += 0.5;
   }
+
   if (medical_history.includes("obesitas")) {
     calories *= 0.9;
     protein += 5;
