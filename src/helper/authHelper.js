@@ -1,25 +1,23 @@
-function calculateDailyNutritionTarget({ weight, height, birthdate, activity_level, trimester, medical_history = [] }) {
+function calculateDailyNutritionTarget({ weight, height, birthdate, trimester, medical_history = [] }) {
   const age = new Date().getFullYear() - new Date(birthdate).getFullYear();
+
+  // Hitung BMR (Mifflin-St Jeor untuk wanita)
   let bmr = 10 * weight + 6.25 * height - 5 * age - 161;
 
-  const activityFactorMap = {
-    ringan: 1.375,
-    sedang: 1.55,
-    berat: 1.725,
-  };
-  const activityFactor = activityFactorMap[activity_level?.toLowerCase()] || 1.2;
-  let calories = bmr * activityFactor;
+  // Faktor aktivitas ringan untuk ibu hamil
+  const activityFactor = 1.3;
+  let tdee = bmr * activityFactor;
+
+  // Tambahan kalori sesuai trimester
+  let extraCalories = trimester === 1 ? 180 : trimester === 2 ? 300 : 450;
+  let calories = tdee + extraCalories;
 
   // Protein
   let baseProtein = 0.8 * weight;
   let extraProtein = trimester === 1 ? 1 : trimester === 2 ? 10 : 30;
   let protein = baseProtein + extraProtein;
 
-  // Makronutrien
-  let fat = (calories * 0.25) / 9;
-  let carbs = (calories * 0.55) / 4;
-
-  // Mikronutrien dasar
+  // Micronutrients dasar (AKG Ibu Hamil)
   let fiber = 30;
   let sugar = 25;
   let sodium = 2300;
@@ -35,14 +33,14 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, activity_lev
   let water = 3000;
   let vitamin_a = 800;
   let vitamin_e = 15;
-  let magnesium = 300;
-  let selenium = 60;
+  let magnesium = 350; // update sesuai AKG RI
+  let selenium = 65; // update sesuai AKG RI
 
   // Penyesuaian penyakit
   if (medical_history.includes("diabetes")) {
-    carbs *= 0.8;
     sugar = 25;
     fiber += 5;
+    calories *= 0.95; // sedikit kurangi kalori total
   }
   if (medical_history.includes("hipertensi")) {
     sodium = 1500;
@@ -55,8 +53,11 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, activity_lev
   if (medical_history.includes("obesitas")) {
     calories *= 0.9;
     protein += 5;
-    carbs *= 0.9;
   }
+
+  // Hitung ulang lemak & karbo setelah penyesuaian kalori
+  let fat = (calories * 0.25) / 9;
+  let carbs = (calories * 0.55) / 4;
 
   return {
     calories: Math.round(calories),
@@ -67,7 +68,7 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, activity_lev
     sugar,
     sodium,
     folic_acid,
-    kalsium: calcium,
+    calcium,
     vitamin_d,
     vitamin_b6,
     vitamin_b12,

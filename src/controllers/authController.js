@@ -76,7 +76,7 @@ const calculateTrimesterFromLMP = (lastMenstrualPeriod) => {
 // 📌 Lengkapi Profil Pengguna (Ibu Hamil)
 const completeUserProfile = async (req, res) => {
   const { userId } = req;
-  const { height, weight, activity, birthdate, last_menstrual_period, photoOption, medical_history = [] } = req.body;
+  const { height, weight, birthdate, last_menstrual_period, photoOption, medical_history = [] } = req.body;
 
   try {
     // Ambil data pengguna saat ini
@@ -91,7 +91,6 @@ const completeUserProfile = async (req, res) => {
       weight,
       height,
       birthdate,
-      activity_level: activity,
       trimester: newTrimester,
       medical_history,
     });
@@ -104,7 +103,6 @@ const completeUserProfile = async (req, res) => {
         weight,
         last_menstrual_period,
         birthdate,
-        activity_level: activity,
         gestational_age,
         trimester: newTrimester,
         medical_history,
@@ -155,7 +153,7 @@ const loginUser = async (req, res) => {
       trimester: user.trimester,
       height: user.height,
       weight: user.weight,
-      activity_level: user.activity_level,
+
       medical_history: user.medical_history,
       daily_nutrition_target: user.daily_nutrition_target,
       nutrition_stats: user.nutrition_stats,
@@ -182,11 +180,11 @@ const loginUser = async (req, res) => {
 // 📌 Update Data Umum Pengguna
 const updateUserData = async (req, res) => {
   const { userId } = req.params;
-  const { height, weight, gender, activity, goal, birthdate, photoOption } = req.body;
+  const { height, weight, gender, goal, birthdate, photoOption } = req.body;
 
   try {
     // Update data pengguna berdasarkan ID
-    const updatedUser = await User.findByIdAndUpdate(userId, { height, weight, gender, activity, goal, birthdate, photoOption }, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(userId, { height, weight, gender, goal, birthdate, photoOption }, { new: true });
 
     if (!updatedUser) {
       return res.status(404).json({ message: "Pengguna tidak ditemukan." });

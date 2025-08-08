@@ -15,7 +15,6 @@ const UserSchema = new mongoose.Schema({
   trimester: { type: Number, enum: [1, 2, 3] },
   height: Number,
   weight: Number,
-  activity_level: { type: String, enum: ["Ringan", "Sedang", "Berat"] },
   medical_history: [String],
   daily_nutrition_target: NutritionInfoSchema,
   meal_logs: [MealLogSchema],
