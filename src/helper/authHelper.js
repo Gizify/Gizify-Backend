@@ -1,7 +1,7 @@
 function calculateDailyNutritionTarget({ weight, height, birthdate, trimester, medical_history = [] }) {
   const age = new Date().getFullYear() - new Date(birthdate).getFullYear();
 
-  // Hitung BMR (Mifflin-St Jeor untuk wanita)
+  // Hitung BMR
   let bmr = 10 * weight + 6.25 * height - 5 * age - 161;
 
   // Faktor aktivitas ringan untuk ibu hamil
