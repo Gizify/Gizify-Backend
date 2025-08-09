@@ -27,7 +27,7 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, trimester, m
   let vitamin_b6 = 1.9;
   let vitamin_b12 = 2.6;
   let vitamin_d = 15;
-  let calcium = 1000;
+  let kalsium = 1000;
   let zinc = 11;
   let iodium = 220;
   let water = 3000;
@@ -71,7 +71,7 @@ function calculateDailyNutritionTarget({ weight, height, birthdate, trimester, m
     sugar,
     sodium,
     folic_acid,
-    calcium,
+    kalsium,
     vitamin_d,
     vitamin_b6,
     vitamin_b12,
